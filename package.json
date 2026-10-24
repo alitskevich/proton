@@ -1,0 +1,13 @@
+{
+  "name": "proton",
+  "private": true,
+  "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
+  "type": "module",
+  "scripts": {
+    "postinstall": "./ops/link-modules.sh ultimus"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "ultimus": "^2.3.0"
+  }
+}
