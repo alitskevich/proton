@@ -2,14 +2,17 @@
 #
 # Usage: ../proton/ops/emulators.sh
 #
-# Starts the Firebase emulators of the project in the current directory (functions, firestore, auth, storage).
+# Starts the Firebase emulators of the project in the current directory (functions, firestore, auth, storage),
+# on the ports its own firebase.json declares, so two projects with distinct port blocks can run side by side.
 
 set -x
 
-export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+port() { node -p "require('./firebase.json').emulators?.$1?.port ?? $2"; }
 
-export FIRESTORE_EMULATOR_HOST="localhost:8888"
+export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:$(port auth 9099)"
 
-export FIREBASE_STORAGE_EMULATOR_HOST="127.0.0.1:9199"
+export FIRESTORE_EMULATOR_HOST="localhost:$(port firestore 8080)"
+
+export FIREBASE_STORAGE_EMULATOR_HOST="127.0.0.1:$(port storage 9199)"
 
 firebase emulators:start --only=functions,firestore,auth,storage # --import=./tmp --export-on-exit
