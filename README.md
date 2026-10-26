@@ -21,6 +21,14 @@ Shared scripts for the sibling projects in `~/Projects`. Call them from a projec
 
 `utils/` holds the helpers these scripts share.
 
+## configs
+
+Shared base configs. Extend them by relative path, e.g. `"extends": "../proton/configs/tsconfig.json"`.
+
+| File | Purpose |
+| --- | --- |
+| `tsconfig.json` | Strict ESNext + DOM, bundler resolution, no emit. Projects add `include`, `types` and their own options. |
+
 ## Setup
 
 ```bash
