@@ -14,6 +14,7 @@ Shared scripts for the sibling projects in `~/Projects`. Call them from a projec
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
 | `generate-catalog.ts [<dir,dir>] [outFile]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`). |
+| `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators (functions, firestore, auth, storage). |
