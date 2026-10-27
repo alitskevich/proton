@@ -42,11 +42,14 @@ function treeOf(paths: string[]): Tree {
   return root;
 }
 
-/** The files under `dir` as they stand in the working tree, minus what git ignores. */
+/**
+ * The files under `dir` as they stand in the working tree, minus what git ignores. `-z` keeps a
+ * non-ASCII path verbatim; without it git quotes the path and `existsSync` drops the file.
+ */
 function listFiles(dir: string): string[] {
-  const args = ["ls-files", "--cached", "--others", "--exclude-standard", "--", dir];
+  const args = ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", dir];
   return execFileSync("git", args, { encoding: "utf8" })
-    .split("\n")
+    .split("\0")
     .filter((path) => path && existsSync(path));
 }
 
