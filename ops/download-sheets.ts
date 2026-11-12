@@ -18,7 +18,8 @@
  *   - outputFile with {sheet}: writes each sheet to a separate file
  */
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import { stringFormat, stringify } from "ultimus";
 
@@ -73,6 +74,12 @@ function parseSheetValues(values: string[][]): Row[] {
     .filter((row) => Object.values(row).some(Boolean)); // skip fully empty rows
 }
 
+/** Writes `content` to `file`, creating its directory first. */
+function writeFile(file: string, content: string): void {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, content, "utf8");
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 /** Fetch one sheet; write it to its own file when `outputFile` names `{sheet}`, else collect it into `result`. */
@@ -80,17 +87,17 @@ async function downloadSheet(
   spreadsheetId: string,
   name: string,
   client: Awaited<ReturnType<typeof createAuthClient>>,
-  outputFile: string,
-  result: Record<string, Row[]>
+  outputFile: string | undefined,
+  result: Record<string, Row[]>,
 ): Promise<void> {
   const encoded = encodeURIComponent(name);
   const data = await apiGet(`${SHEETS_API}/${spreadsheetId}/values/${encoded}`, client);
   const values: string[][] = data.values ?? [];
   const parsed = parseSheetValues(values);
 
-  const headers = Object.keys(parsed[0]);
+  const headers = Object.keys(parsed[0] ?? {});
   let validated: any = parsed;
-  if (outputFile.includes("{sheet}")) {
+  if (outputFile?.includes("{sheet}")) {
     const outFile = stringFormat(outputFile, { sheet: name });
     if (headers.includes("bundle")) {
       // If there's a "bundle" column, split into multiple files by group
@@ -101,11 +108,11 @@ async function downloadSheet(
           acc[bundle].push({ id: key || id || `p${acc[bundle].length + 1}`, ...row });
           return acc;
         },
-        {} as Record<string, Row[]>
+        {} as Record<string, Row[]>,
       );
     }
 
-    writeFileSync(outFile, stringify(validated), "utf8");
+    writeFile(outFile, stringify(validated));
 
     console.log(`\nWritten to ${outFile}`);
   } else {
@@ -140,7 +147,7 @@ async function main() {
   // 3. Output
   if (outputFile) {
     if (!outputFile.includes("{sheet}")) {
-      writeFileSync(outputFile, stringify(result), "utf8");
+      writeFile(outputFile, stringify(result));
       console.log(`\nWritten to ${outputFile}`);
     }
   } else {

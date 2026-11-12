@@ -6,13 +6,15 @@
   "exports": {
     "./devops": "./devops/index.ts",
     "./hot": "./hot/index.ts",
+    "./utils-node": "./utils-node/index.ts",
+    "./utils-files": "./utils-files/index.ts",
     "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
     "./vite": "./bundler/arrmaturaTemplatePluginVite.ts"
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./devops ./hot ./bundler",
-    "lint:fix": "biome check --write ./devops ./hot ./bundler",
+    "lint": "biome check ./devops ./hot ./utils-node ./utils-files ./bundler",
+    "lint:fix": "biome check --write ./devops ./hot ./utils-node ./utils-files ./bundler",
     "test": "vitest run",
     "typecheck": "tsc"
   },

@@ -2,7 +2,16 @@
   "extends": "./configs/tsconfig.json",
   "compilerOptions": {
     "noImplicitAny": false,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "allowImportingTsExtensions": true
   },
-  "include": ["devops", "hot", "bundler"]
+  "include": [
+    "devops",
+    "hot",
+    "utils-node",
+    "utils-files",
+    "bundler"
+  ]
 }

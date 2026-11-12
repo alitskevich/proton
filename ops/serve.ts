@@ -1,3 +1,14 @@
+// esbuild dev server with watch, run from an app's directory: `bun ../proton/ops/serve.ts`.
+//
+//   PORT, HOST     where the app is served (default localhost:8080)
+//   WWW            servedir when package.json names none (default ./www)
+//   FALLBACK       the page for unknown paths (default <servedir>/index.html)
+//   PROXY_PORT     put a live-reload front server on this port; esbuild stays on PORT
+//   PROXY          an app back end: requests under PROXY_PATHS (comma-separated) go to it.
+//                  The front server then takes PORT and esbuild moves to a loopback port.
+//
+// Live reload lives in the front server, so it is on whenever PROXY_PORT or PROXY is set.
+
 import http from "node:http";
 import * as esbuild from "esbuild";
 import { readFileJsonContent } from "./utils/files";
@@ -5,6 +16,7 @@ import { getEsbuildOptions } from "./utils/getEsbuildOptions";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
+const CORS_HEADERS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
 
 function makeLiveReloadPlugin(clients: Set<http.ServerResponse>): esbuild.Plugin {
   return {
@@ -22,32 +34,43 @@ function makeLiveReloadPlugin(clients: Set<http.ServerResponse>): esbuild.Plugin
   };
 }
 
+/** Where the front server sends requests: esbuild, and optionally a back end for some paths. */
+type Upstreams = { bundler: { host: string; port: number }; backend?: string; backendPaths: string[] };
+
 export async function main(options: any = {}) {
   try {
-    const { name, esbuild: esBuildPackageOpions } = readFileJsonContent([`${process.cwd()}/package.json`]) ?? {};
+    const { name, esbuild: packageOptions = {} } = readFileJsonContent([`${process.cwd()}/package.json`]) ?? {};
+    // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is
+    // this server's own and esbuild rejects it.
+    const { servedir: packageServedir, ...packageBuildOptions } = packageOptions;
 
     const {
-      entryPoints = esBuildPackageOpions?.entryPoints,
-      servedir = esBuildPackageOpions?.servedir ?? process.env.WWW ?? "./www",
-      fallback = `${servedir}/index.html`,
+      servedir = packageServedir ?? process.env.WWW ?? "./www",
+      fallback = process.env.FALLBACK ?? `${servedir}/index.html`,
       port = parseInt(process.env.PORT ?? "8080", 10),
       host = process.env.HOST ?? "localhost",
+      backend = process.env.PROXY,
+      backendPaths = process.env.PROXY_PATHS?.split(",").filter(Boolean) ?? [],
       noWatch = false,
       ...buildOptions
     } = options;
+
+    const proxyPort = process.env.PROXY_PORT ? Number(process.env.PROXY_PORT) : backend ? port : undefined;
+    // When the front server takes PORT, esbuild picks its own port on loopback.
+    const bundlerOnLoopback = proxyPort === port;
 
     const clients = new Set<http.ServerResponse>();
 
     const ctx = await esbuild.context(
       getEsbuildOptions({
-        entryPoints,
+        ...packageBuildOptions,
         plugins: [makeLiveReloadPlugin(clients)],
         outdir: `${servedir}/dist`,
         // Dev only: link the map so devtools pick it up. Production builds (build.ts) keep
         // the "external" default, which emits no sourceMappingURL reference.
         sourcemap: "linked",
         ...buildOptions,
-      })
+      }),
     );
 
     if (!noWatch) {
@@ -57,8 +80,7 @@ export async function main(options: any = {}) {
     const serveOptions = {
       servedir,
       fallback,
-      port,
-      host,
+      ...(bundlerOnLoopback ? { host: "127.0.0.1" } : { port, host }),
       onRequest: ({ method, path, status }) => {
         console.log(`>> ${method}${path} - ${status}`);
       },
@@ -66,19 +88,25 @@ export async function main(options: any = {}) {
 
     const { hosts: serveHosts, port: servePort } = await ctx.serve(serveOptions);
 
-    const addresses = (port) =>
-      String(serveHosts)
+    const addresses = (hosts: string[], port: number) =>
+      String(hosts)
         .split(",")
         .map((h) => `http://${h}:${port}`)
         .join(" ");
 
-    const proxyPort = process.env.PROXY_PORT; // 3000 + (servePort % 1000);
-    if (proxyPort) {
-      startProxy(serveHosts, port, Number(proxyPort), clients);
+    if (proxyPort === undefined) {
+      console.log(`✅ Serving "${name}" app at ${addresses(serveHosts, servePort)} from ${servedir}`);
+      return;
     }
 
-    console.log(`✅ Serving "${name}" app at ${addresses(servePort)} from ${servedir}`);
-    if (proxyPort) console.log(`Proxy at ${addresses(proxyPort)} (hot reload enabled)`);
+    const upstreams: Upstreams = { bundler: { host: serveHosts[0], port: servePort }, backend, backendPaths };
+    await startProxy(host, proxyPort, upstreams, clients);
+
+    if (!bundlerOnLoopback) {
+      console.log(`✅ Serving "${name}" app at ${addresses(serveHosts, servePort)} from ${servedir}`);
+    }
+    console.log(`✅ Serving "${name}" app at ${addresses([host], proxyPort)} from ${servedir} (hot reload enabled)`);
+    if (backend) console.log(`↪ ${backendPaths.join(" ")} → ${backend}`);
   } catch (err: any) {
     console.error("❌ Error:", err.message || err);
     if (err.details) {
@@ -90,74 +118,93 @@ export async function main(options: any = {}) {
 
 main();
 
-function startProxy(serveHosts: string[], port: any, proxyPort: number, clients: Set<http.ServerResponse>) {
-  http
-    .createServer((req, res) => {
-      // SSE endpoint for hot reload
-      if (req.url === LIVERELOAD_PATH) {
-        res.writeHead(200, {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-          "Access-Control-Allow-Origin": "*",
-        });
-        res.write(": connected\n\n");
-        clients.add(res);
-        req.on("close", () => clients.delete(res));
-        return;
-      }
+function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clients: Set<http.ServerResponse>) {
+  const { bundler, backend, backendPaths } = upstreams;
+  const server = http.createServer((req, res) => {
+    const url = req.url ?? "/";
 
-      if (req.method === "OPTIONS") {
-        res.writeHead(200, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" });
-        res.end("");
-        return;
-      }
-
-      const options = {
-        hostname: serveHosts[0],
-        port: port,
-        path: req.url,
-        method: req.method,
-        headers: req.headers,
-      };
-
-      // Forward each incoming request to esbuild
-      const proxyReq = http.request(options, (proxyRes) => {
-        // If esbuild returns "not found", send a custom 404 page
-        if (proxyRes.statusCode === 404) {
-          res.writeHead(404, { "Content-Type": "text/html" });
-          res.end("<h1>A custom 404 page</h1>");
-          return;
-        }
-
-        const contentType = proxyRes.headers["content-type"] ?? "";
-        const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
-
-        // Inject live-reload script into HTML responses
-        if (contentType.includes("text/html")) {
-          const chunks: Uint8Array[] = [];
-          proxyRes.on("data", (chunk) => chunks.push(chunk));
-          proxyRes.on("end", () => {
-            let html = Buffer.concat(chunks).toString();
-            html = html.includes("</body>") ? html.replace("</body>", `${INJECT_SCRIPT}</body>`) : html + INJECT_SCRIPT;
-            const buf = Buffer.from(html);
-            res.writeHead(proxyRes.statusCode ?? 200, {
-              ...proxyRes.headers,
-              ...corsHeaders,
-              "content-length": buf.length,
-            });
-            res.end(buf);
-          });
-          return;
-        }
-
-        // Otherwise, forward the response from esbuild to the client
-        res.writeHead(proxyRes.statusCode ?? 200, { ...proxyRes.headers, ...corsHeaders });
-        proxyRes.pipe(res, { end: true });
+    // SSE endpoint for hot reload
+    if (url === LIVERELOAD_PATH) {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
       });
+      res.write(": connected\n\n");
+      clients.add(res);
+      req.on("close", () => clients.delete(res));
+      return;
+    }
 
-      // Forward the body of the request to esbuild
-      req.pipe(proxyReq, { end: true });
-    })
-    .listen(proxyPort);
+    // The back end's routes pass through untouched.
+    if (backend && backendPaths.some((path) => url.startsWith(path))) {
+      const backendReq = http.request(
+        `${backend}${url}`,
+        { method: req.method, headers: req.headers },
+        (backendRes) => {
+          res.writeHead(backendRes.statusCode ?? 502, backendRes.headers);
+          backendRes.pipe(res);
+        },
+      );
+      backendReq.on("error", (error) => {
+        res.writeHead(502, { "content-type": "text/plain" });
+        res.end(`${backend} is down: ${error.message}`);
+      });
+      req.pipe(backendReq);
+      return;
+    }
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(200, CORS_HEADERS);
+      res.end("");
+      return;
+    }
+
+    const options = {
+      hostname: bundler.host,
+      port: bundler.port,
+      path: url,
+      method: req.method,
+      headers: req.headers,
+    };
+
+    // Forward each incoming request to esbuild
+    const proxyReq = http.request(options, (proxyRes) => {
+      // If esbuild returns "not found", send a custom 404 page
+      if (proxyRes.statusCode === 404) {
+        res.writeHead(404, { "Content-Type": "text/html" });
+        res.end("<h1>A custom 404 page</h1>");
+        return;
+      }
+
+      const contentType = proxyRes.headers["content-type"] ?? "";
+
+      // Inject live-reload script into HTML responses
+      if (contentType.includes("text/html")) {
+        const chunks: Uint8Array[] = [];
+        proxyRes.on("data", (chunk) => chunks.push(chunk));
+        proxyRes.on("end", () => {
+          let html = Buffer.concat(chunks).toString();
+          html = html.includes("</body>") ? html.replace("</body>", `${INJECT_SCRIPT}</body>`) : html + INJECT_SCRIPT;
+          const buf = Buffer.from(html);
+          res.writeHead(proxyRes.statusCode ?? 200, {
+            ...proxyRes.headers,
+            ...CORS_HEADERS,
+            "content-length": buf.length,
+          });
+          res.end(buf);
+        });
+        return;
+      }
+
+      // Otherwise, forward the response from esbuild to the client
+      res.writeHead(proxyRes.statusCode ?? 200, { ...proxyRes.headers, ...CORS_HEADERS });
+      proxyRes.pipe(res, { end: true });
+    });
+
+    // Forward the body of the request to esbuild
+    req.pipe(proxyReq, { end: true });
+  });
+  return new Promise<void>((resolve) => server.listen(proxyPort, host, () => resolve()));
 }

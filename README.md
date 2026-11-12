@@ -19,10 +19,26 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 | --- | --- |
 | `proton/devops` | `LOCAL_HOSTNAMES`, `isLocalHost`, `isLocalOrigin` — pure, safe in a dev server. See [devops/README.md](devops/README.md). |
 | `proton/hot` | The hot reload: `HotReloadService` and its bun server (`hot/server/main.ts`). See [hot/README.md](hot/README.md). |
+| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
+| `proton/utils-node` | The rest of Node: processes, network, http, crypto, os, url, readline. See [the Node.js boundary](#nodejs-boundary). |
 | `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`). |
 | `proton/vite` | The same as a Vite plugin (`bundler/`). |
 
 `npm run gates` checks them: typecheck, lint and test.
+
+### Node.js boundary
+
+`utils-files` and `utils-node` are the only door to Node.js built-ins for a project that keeps them out of its own code (almaster lints for it). Their rules:
+
+- 🔒 Each imports Node directly, so neither depends on the other.
+- 🔒 Export only what code outside them uses. When the last outside user goes, the export goes too.
+- 🔒 One helper per file, named after it: `<name>.ts` exports exactly `<name>`.
+- 🔒 Plain Node functions are re-exported from one file per Node module, in its owner, with no single-function re-export files: `fs.ts`, `fsPromises.ts`, `path.ts`, `childProcess.ts`, …
+- 🔒 `index.ts` re-exports every file. Import from `proton/utils-files` or `proton/utils-node`.
+- 🔒 All types and interfaces live in `types.ts`. Node's own types (`Dirent`, `IncomingMessage`, …) are re-exported from there too.
+- 🔒 Every helper has a unit test, `<name>.test.ts`. `index.test.ts` proves every module file re-exports Node's own functions from a module its owner owns, and fails when a file breaks the rules above.
+- 🔒 Relative imports end in `.ts` and type imports use `import type`, so plain Node (`.ts` scripts, `.mjs`) runs them with no build step.
+- Missing Node function → add its name to that module's file in the owner. Missing helper → add `<name>.ts`, its test, and its line in `index.ts`.
 
 ## ops
 
@@ -32,7 +48,7 @@ Shared scripts for the sibling projects in `~/Projects`. Call them from a projec
 | --- | --- |
 | `link-modules.sh` | Symlink every library in `~/Projects/libs` into `./node_modules` (`postinstall`). |
 | `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
-| `serve.ts` | esbuild dev server with watch; `PORT`, `HOST`, `PROXY_PORT` (live-reload proxy). |
+| `serve.ts` | esbuild dev server with watch; `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
 | `generate-catalog.ts [<dir,dir>] [outFile]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`). |
@@ -42,7 +58,7 @@ Shared scripts for the sibling projects in `~/Projects`. Call them from a projec
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
 | `download-sheets.ts <spreadsheetId> [outFile]` | Dump a Google Spreadsheet as `{ sheet: rows[] }` JSON (stdout, one file, or one per `{sheet}`); Application Default Credentials. |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
-| `emulators.sh` | Start the Firebase emulators (functions, firestore, auth, storage). |
+| `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |
 
 `utils/` holds the helpers these scripts share.
 
