@@ -2,11 +2,6 @@
   "id": "proton",
   "name": "proton",
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
-  "purpose": "Keep each shared utility in one home, so sibling projects stop copying it.",
-  "goals": [
-    "Share infrastructure utilities across the sibling projects",
-    "Keep each utility in one home instead of a copy per project"
-  ],
   "status": "maintain",
   "domain": "dev",
   "symbol": "⚛️",

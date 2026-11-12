@@ -3,12 +3,27 @@
   "private": true,
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "type": "module",
+  "exports": {
+    "./devops": "./devops/index.ts",
+    "./devops/local": "./devops/local.ts",
+    "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
+    "./vite": "./bundler/arrmaturaTemplatePluginVite.ts"
+  },
   "scripts": {
-    "postinstall": "./ops/link-modules.sh ultimus"
+    "gates": "npx --yes npm-run-all --parallel typecheck lint test",
+    "lint": "biome check ./devops ./bundler",
+    "lint:fix": "biome check --write ./devops ./bundler",
+    "test": "vitest run",
+    "typecheck": "tsc",
+    "postinstall": "./ops/link-modules.sh arrmatura ultimus"
   },
   "dependencies": {
     "esbuild": "^0.28.2",
     "google-auth-library": "^11.3.1",
     "ultimus": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "vitest": "^5.0.1"
   }
 }

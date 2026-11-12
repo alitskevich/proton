@@ -46,7 +46,7 @@ function treeOf(paths: string[]): Tree {
  * The files under `dir` as they stand in the working tree, minus what git ignores. `-z` keeps a
  * non-ASCII path verbatim; without it git quotes the path and `existsSync` drops the file.
  */
-function listFiles(dir: string): string[] {
+export function listFiles(dir: string): string[] {
   const args = ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", dir];
   return execFileSync("git", args, { encoding: "utf8" })
     .split("\0")
@@ -80,4 +80,4 @@ function main() {
   }
 }
 
-main();
+if (import.meta.main) main();
