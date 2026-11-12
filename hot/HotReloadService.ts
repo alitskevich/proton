@@ -9,7 +9,7 @@
  */
 
 import { Component, type IEntitronRoot } from "arrmatura";
-import { isLocalHost } from "../local";
+import { isLocalHost } from "../devops";
 import { HOT_HOST, HOT_PATH } from "./config";
 
 /** True when `href` is a file of `origin` whose name is one of `files`; the query does not count. */

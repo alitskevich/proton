@@ -46,7 +46,8 @@ export const writeFileContent = (f: Path, c: string | Promise<string>) => {
   if (c == null) return;
   if (c instanceof Promise) return c.then((x) => writeFileContent(f, x));
   if (typeof c === "string") {
-    fs.writeFileSync(ensurePathForFile(filePath(f)), str(c).trim(), "utf8");
+    // Trimmed, then one final newline: what formatters (biome) expect of a generated file.
+    fs.writeFileSync(ensurePathForFile(filePath(f)), `${str(c).trim()}\n`, "utf8");
   }
 };
 

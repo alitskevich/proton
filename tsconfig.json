@@ -4,5 +4,5 @@
     "noImplicitAny": false,
     "types": ["node"]
   },
-  "include": ["devops", "bundler"]
+  "include": ["devops", "hot", "bundler"]
 }

@@ -13,12 +13,12 @@ Keep each shared utility in one home, so sibling projects stop copying it.
 
 ## Imported code
 
-Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project gets it from the sibling checkout: add it to the project's `link-modules.sh` list, and never to `dependencies` — the name on npm belongs to someone else.
+Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project gets it from the sibling checkout: an app runs `link-modules.sh`, which links every library; a library in `libs/` lists it as `"proton": "file://../proton"`; never a registry version — the name on npm belongs to someone else.
 
 | Export | What |
 | --- | --- |
-| `proton/devops` | Dev-only tools an app mounts on localhost: the hot reload. See [devops/README.md](devops/README.md). |
-| `proton/devops/local` | `isLocalHost`, `isLocalOrigin` — pure, safe in a dev server. |
+| `proton/devops` | `LOCAL_HOSTNAMES`, `isLocalHost`, `isLocalOrigin` — pure, safe in a dev server. See [devops/README.md](devops/README.md). |
+| `proton/hot` | The hot reload: `HotReloadService` and its bun server (`hot/server/main.ts`). See [hot/README.md](hot/README.md). |
 | `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`). |
 | `proton/vite` | The same as a Vite plugin (`bundler/`). |
 
@@ -30,7 +30,7 @@ Shared scripts for the sibling projects in `~/Projects`. Call them from a projec
 
 | Script | Purpose |
 | --- | --- |
-| `link-modules.sh <pkg>...` | Symlink sibling checkouts `../<pkg>` into `./node_modules` (`postinstall`). |
+| `link-modules.sh` | Symlink every library in `~/Projects/libs` into `./node_modules` (`postinstall`). |
 | `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
 | `serve.ts` | esbuild dev server with watch; `PORT`, `HOST`, `PROXY_PORT` (live-reload proxy). |
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |

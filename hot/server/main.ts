@@ -1,5 +1,5 @@
 /**
- * The hot dev server, run by bun: `bun devops/hot/server/main.ts <dir> <port>` watches `dir` (the
+ * The hot dev server, run by bun: `bun hot/server/main.ts <dir> <port>` watches `dir` (the
  * bundler's output) and streams each batch of changed files to every page connected to `HOT_PATH`,
  * on 127.0.0.1 at `port`. Dev only; nothing here is deployed.
  */
@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, watch } from "node:fs";
 import { createServer, type ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
-import { isLocalOrigin } from "../../local";
+import { isLocalOrigin } from "../../devops";
 import { HOT_HOST, HOT_PATH } from "../config";
 import { createDistTracker, hotEvent } from "./tracker";
 

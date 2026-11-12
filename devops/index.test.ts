@@ -1,17 +1,29 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { components } from "./index";
+import { isLocalHost, isLocalOrigin, LOCAL_HOSTNAMES } from "./index";
 
-const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
-
-describe("proton/devops", () => {
-  it("registers HotReloadService alone", () => {
-    expect(components.map((component) => component.name)).toEqual(["HotReloadService"]);
+describe("isLocalHost / isLocalOrigin", () => {
+  it.each(LOCAL_HOSTNAMES)("isLocalHost is true for %s", (hostname) => {
+    expect(isLocalHost(hostname)).toBe(true);
   });
 
-  it("no client module imports a server half or node:*", () => {
-    for (const file of ["index.ts", "local.ts", "hot/config.ts", "hot/HotReloadService.ts"]) {
-      expect(read(file)).not.toMatch(/from "(node:|\.\.?\/(hot\/)?server)/);
-    }
+  it("isLocalHost is false for a deployed host", () => {
+    expect(isLocalHost("example.web.app")).toBe(false);
+  });
+
+  it("isLocalOrigin reads the hostname of an origin", () => {
+    expect(isLocalOrigin("http://localhost:8189")).toBe(true);
+    expect(isLocalOrigin("http://127.0.0.1:8089")).toBe(true);
+    expect(isLocalOrigin("http://[::1]:8089")).toBe(true);
+    expect(isLocalOrigin("https://example.web.app")).toBe(false);
+  });
+
+  it("isLocalOrigin is false for a malformed origin", () => {
+    expect(isLocalOrigin("not a url")).toBe(false);
+    expect(isLocalOrigin("")).toBe(false);
+  });
+
+  it("imports neither node:* nor a server half, so the browser bundle can take it", () => {
+    expect(readFileSync(new URL("index.ts", import.meta.url), "utf8")).not.toMatch(/from "(node:|[^"]*\/server)/);
   });
 });

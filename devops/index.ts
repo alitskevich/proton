@@ -1,11 +1,19 @@
 /**
- * `proton/devops` — dev-only tools an app mounts on localhost. Not part of the `arrmatura-web` `modules`
- * bundle: an app registers `components` itself. The server halves (`hot/server/`) are never
- * imported from here; an app runs them with bun.
+ * `proton/devops` — this machine, as dev tools see it: a dev tool runs, and its server answers, on a
+ * local host only. Pure, so a dev server imports it as freely as the browser bundle does. The hot reload
+ * is `proton/hot`.
  */
 
-import { HotReloadService } from "./hot/HotReloadService";
+export const LOCAL_HOSTNAMES: string[] = ["localhost", "127.0.0.1", "[::1]"];
 
-export const components = [HotReloadService];
+/** True for a hostname of this machine. */
+export const isLocalHost = (hostname: string) => LOCAL_HOSTNAMES.includes(hostname);
 
-export * from "./local";
+/** True for an `Origin` header whose host is this machine; a malformed origin is not local. */
+export function isLocalOrigin(origin: string): boolean {
+  try {
+    return isLocalHost(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
+}
