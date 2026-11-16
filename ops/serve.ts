@@ -18,20 +18,30 @@ const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
 const CORS_HEADERS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
 
-function makeLiveReloadPlugin(clients: Set<http.ServerResponse>): esbuild.Plugin {
-  return {
-    name: "live-reload",
-    setup(build) {
-      build.onEnd(() => {
-        for (const client of clients) {
-          client.write("data: reload\n\n");
-        }
-        if (clients.size > 0) {
-          console.log(`♻️  Hot reload sent to ${clients.size} client(s)`);
-        }
-      });
-    },
+// esbuild's own change stream, which sends `change` only when the build output differs. Not `onEnd`: under
+// `serve`, every request rebuilds, so a reload sent on each build makes the reloaded page reload again, forever.
+const ESBUILD_EVENTS_PATH = "/esbuild";
+const RECONNECT_MS = 500;
+
+/** Relay esbuild's `change` events to the live-reload clients, reconnecting when the stream drops. */
+function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerResponse>) {
+  let retried = false;
+  const retry = () => {
+    if (retried) return;
+    retried = true;
+    setTimeout(() => relayChanges(bundler, clients), RECONNECT_MS);
   };
+  const headers = { Accept: "text/event-stream" };
+  const req = http.get({ hostname: bundler.host, port: bundler.port, path: ESBUILD_EVENTS_PATH, headers }, (res) => {
+    res.setEncoding("utf8");
+    res.on("data", (chunk: string) => {
+      if (!chunk.includes("event: change")) return;
+      for (const client of clients) client.write("data: reload\n\n");
+      if (clients.size > 0) console.log(`♻️  Hot reload sent to ${clients.size} client(s)`);
+    });
+    res.on("end", retry);
+  });
+  req.on("error", retry);
 }
 
 /** Where the front server sends requests: esbuild, and optionally a back end for some paths. */
@@ -64,7 +74,6 @@ export async function main(options: any = {}) {
     const ctx = await esbuild.context(
       getEsbuildOptions({
         ...packageBuildOptions,
-        plugins: [makeLiveReloadPlugin(clients)],
         outdir: `${servedir}/dist`,
         // Dev only: link the map so devtools pick it up. Production builds (build.ts) keep
         // the "external" default, which emits no sourceMappingURL reference.
@@ -120,6 +129,7 @@ main();
 
 function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clients: Set<http.ServerResponse>) {
   const { bundler, backend, backendPaths } = upstreams;
+  relayChanges(bundler, clients);
   const server = http.createServer((req, res) => {
     const url = req.url ?? "/";
 
