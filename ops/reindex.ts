@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, watch } from "node:fs";
 import { posix } from "node:path";
 import { writeFileContent } from "./utils/files";
 import { mapDirectoryFiles } from "./utils/mapDirectoryFiles";
@@ -181,7 +181,7 @@ ${exports.map(([, line]) => line).join(";\n")};
   console.log(`Reindex module: ${moduleDir} -> ${indexFile} (${templates.length} cml, ${services.length} services)`);
 }
 
-// `bun ../proton/ops/reindex.ts <dirs> <indexFile> [--filter=<glob>]`, source dirs comma-separated:
+// `bun ../proton/ops/reindex.ts <dirs> <indexFile> [--filter=<glob>] [--watch]`, source dirs comma-separated:
 //   bun ../proton/ops/reindex.ts "auth,cml,fields" ./index-cml.ts
 //   bun ../proton/ops/reindex.ts "atomic/cml,cml" ./src/index-cml.ts --filter=*.demo.xml
 // Guarded so the generators can also be imported — `index-modules.ts` calls `indexModule` once per
@@ -197,4 +197,20 @@ if (import.meta.main) {
   const indexFile = indexArg || "./src/index.cml.ts";
 
   indexCml({ sourceDirs, indexFile, filter });
+
+  // `--watch` reindexes when an `.xml` is added, removed or renamed — the index lists file names
+  // only, so a content edit needs no reindex. A failed run is reported and the watch goes on.
+  if (args.includes("--watch")) {
+    for (const dir of sourceDirs) {
+      watch(dir, { recursive: true }, (event, file) => {
+        if (event !== "rename" || !file?.endsWith(".xml")) return;
+        try {
+          indexCml({ sourceDirs, indexFile, filter });
+        } catch (err: any) {
+          console.error("❌ Error:", err.message || err);
+        }
+      });
+    }
+    console.log("👀 watching…");
+  }
 }
