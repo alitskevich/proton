@@ -13,7 +13,7 @@ Keep each shared utility in one home, so sibling projects stop copying it.
 
 ## Imported code
 
-Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project gets it from the sibling checkout: an app runs `link-modules.sh`, which links every library; a library in `libs/` lists it as `"proton": "file://../proton"`; never a registry version — the name on npm belongs to someone else.
+Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project lists the sibling checkout as a `file:` dependency — an app as `"proton": "file://../../libs/proton"`, a library in `libs/` as `"proton": "file://../proton"` — never a registry version: the name on npm belongs to someone else.
 
 | Export | What |
 | --- | --- |
@@ -42,12 +42,16 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 ## ops
 
-Shared scripts for the sibling projects in `~/Projects`. Call them from a project root as `../proton/ops/<name>`, and from a workspace package (`packages/<pkg>`, `apps/<app>`) as `../../../proton/ops/<name>`. Every script works on the current directory.
+Shared scripts for the sibling projects in `~/Projects`. An npm script calls one by name, as `proton <name> [args]` (`"build:css": "proton build-css --minify"`), from a project root and a workspace package alike. Every script works on the current directory.
+
+`proton` is the `bin` of this package (`ops/cli.ts`): it runs `ops/<name>.ts` under Bun, or `ops/<name>.sh`, and passes signals and the exit code through. npm puts it in `node_modules/.bin` from the `file:` dependency, before `postinstall` runs, so an app's `postinstall` can be `proton link-modules`: that links every other library checkout.
 
 | Script | Purpose |
 | --- | --- |
 | `link-modules.sh` | Symlink every library in `~/Projects/libs` into `./node_modules` (`postinstall`). |
 | `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
+| `build-css.ts [input] [output] [--watch] [--minify]` | Tailwind CSS build (defaults: `index.css`, `www/dist/index.css`); `-` flags pass through to the Tailwind CLI, which is proton's own dependency. |
+| `hot.ts <dir> <port>` | The hot reload server (`hot/server/main.ts`); see [hot/README.md](hot/README.md). |
 | `serve.ts` | esbuild dev server with watch; `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
@@ -76,4 +80,4 @@ Shared base configs. Extend them by relative path, e.g. `"extends": "../proton/c
 npm install
 ```
 
-Installs `esbuild`, `google-auth-library` and the test tooling, and links `../arrmatura` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.
+Installs `esbuild`, `@tailwindcss/cli`, `google-auth-library` and the test tooling, and links `../arrmatura` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.

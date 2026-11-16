@@ -3,6 +3,9 @@
   "private": true,
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "type": "module",
+  "bin": {
+    "proton": "ops/cli.ts"
+  },
   "exports": {
     "./devops": "./devops/index.ts",
     "./hot": "./hot/index.ts",
@@ -19,6 +22,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@tailwindcss/cli": "^4.3.5",
     "esbuild": "^0.28.2",
     "google-auth-library": "^11.3.1"
   },
