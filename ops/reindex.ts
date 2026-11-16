@@ -137,7 +137,7 @@ export const REGISTRY_FILE = "registry.ts";
  * the file is a pure re-export barrel; call sites register it as `Object.values(registry)`.
  *
  * A service is a `<Name>.xml` with a `<Name>.ts` beside it. The `.xml` is only a signature stub
- * (`<Signature>` metadata for the catalog, and an error message if the class never registers), so
+ * (`<Signature>` metadata for the catalog), so
  * the class is re-exported in its place. A stub declaring anything beyond its own tag is kept, and
  * exported as `$<Name>`.
  *
