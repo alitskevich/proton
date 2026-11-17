@@ -4,7 +4,7 @@
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "type": "module",
   "bin": {
-    "proton": "ops/cli.ts"
+    "proton": "bin/index.ts"
   },
   "exports": {
     "./devops": "./devops/index.ts",

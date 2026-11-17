@@ -44,7 +44,7 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 Shared scripts for the sibling projects in `~/Projects`. An npm script calls one by name, as `proton <name> [args]` (`"build:css": "proton build-css --minify"`), from a project root and a workspace package alike. Every script works on the current directory.
 
-`proton` is the `bin` of this package (`ops/cli.ts`): it runs `ops/<name>.ts` under Bun, or `ops/<name>.sh`, and passes signals and the exit code through. npm puts it in `node_modules/.bin` from the `file:` dependency, before `postinstall` runs, so an app's `postinstall` can be `proton link-modules`: that links every other library checkout.
+`proton` is the `bin` of this package (`bin/index.ts`): it runs `ops/<name>.ts` under Bun, or `ops/<name>.sh`, and passes signals and the exit code through. npm puts it in `node_modules/.bin` from the `file:` dependency, before `postinstall` runs, so an app's `postinstall` can be `proton link-modules`: that links every other library checkout.
 
 | Script | Purpose |
 | --- | --- |

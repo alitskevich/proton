@@ -13,16 +13,16 @@ import { existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { runCommand } from "../utils-node/index.ts";
 
-const ops = fileURLToPath(new URL(".", import.meta.url));
+const ops = fileURLToPath(new URL("../ops/", import.meta.url));
 const [name = "", ...args] = process.argv.slice(2);
 
 const ts = `${ops}${name}.ts`;
 const sh = `${ops}${name}.sh`;
-const command = name !== "cli" && existsSync(ts) ? [process.execPath, ts] : existsSync(sh) ? [sh] : undefined;
+const command = existsSync(ts) ? [process.execPath, ts] : existsSync(sh) ? [sh] : undefined;
 
 if (!command) {
   const scripts = readdirSync(ops)
-    .filter((file) => /\.(ts|sh)$/.test(file) && file !== "cli.ts")
+    .filter((file) => /\.(ts|sh)$/.test(file))
     .map((file) => file.replace(/\.(ts|sh)$/, ""))
     .sort();
   console.error(`Usage: proton <script> [args]\nScripts: ${scripts.join(", ")}`);
