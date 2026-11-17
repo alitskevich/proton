@@ -1,5 +1,6 @@
 {
   "name": "proton",
+  "version": "1.0.0",
   "private": true,
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "type": "module",
@@ -18,6 +19,7 @@
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
     "lint": "biome check ./devops ./hot ./utils-node ./utils-files ./bundler",
     "lint:fix": "biome check --write ./devops ./hot ./utils-node ./utils-files ./bundler",
+    "release": "./ops/release.sh",
     "test": "vitest run",
     "typecheck": "tsc"
   },
