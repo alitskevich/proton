@@ -1,7 +1,7 @@
 import { posix } from "node:path";
-import { writeFileContent } from "./utils/files";
-import { generateFromJsonFiles, overlayLang, readJsonFiles } from "./utils/jsonFiles";
-import { jsonSource } from "./utils/jsonSource";
+import { generateFromJsonFiles, readJsonFiles, writeFileContent } from "../utils-files/index.ts";
+import { overlayLang } from "../utils-node/index.ts";
+import { jsonSource } from "ultimus";
 
 /** One `<name>.json` vocabulary: its member rows, each `{ id, … }`; a `$comment` is written above it. */
 type ShapeSource = { $comment?: string; items: Record<string, unknown>[] };

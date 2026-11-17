@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { spawn } from "node:child_process";
 
 const FORWARDED = ["SIGINT", "SIGTERM", "SIGHUP"] as const;

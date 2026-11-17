@@ -1,6 +1,6 @@
-import { readFileSync, watch } from "node:fs";
+import { readFileSync } from "node:fs";
 import { posix } from "node:path";
-import { mapDirectoryFiles } from "./mapDirectoryFiles";
+import { mapDirectoryFiles } from "./mapDirectoryFiles.ts";
 
 /** `<key>:<lang>` — a translation of `<key>`, written beside it. */
 const TRANSLATION = /^(.+):([a-z]{2})$/;
@@ -12,7 +12,7 @@ function baseOf(node: unknown): unknown {
   return Object.fromEntries(
     Object.entries(node)
       .filter(([key]) => !TRANSLATION.test(key))
-      .map(([key, value]) => [key, baseOf(value)])
+      .map(([key, value]) => [key, baseOf(value)]),
   );
 }
 
@@ -43,10 +43,6 @@ function overlayOf(node: unknown, lang: string): unknown {
   return Object.keys(own).length ? own : undefined;
 }
 
-/** `--overlay=<lang>` from `process.argv`: the language whose overlay a generator writes, else the base. */
-export const overlayLang = () =>
-  process.argv.find((a) => a.startsWith("--overlay="))?.slice("--overlay=".length) || undefined;
-
 /**
  * Every `<name>.json` in `dir`, scanned flat and sorted by file name, as `[name, parsed]`. A name
  * that is not a valid identifier or a file that does not parse throws, naming the file.
@@ -74,27 +70,8 @@ function readRawJsonFiles(dir: string): [name: string, data: unknown][] {
         throw new Error(`${f.name}: ${err.message || err}`);
       }
     },
-    { recursive: false }
+    { recursive: false },
   );
   if (!files.length) throw new Error(`${dir}: no .json files`);
   return files;
-}
-
-/**
- * Runs `generate` once, then — when `process.argv` has `--watch` — again on every `.json` change in
- * `dir`. While watching, a failed run is reported and the watch goes on.
- */
-export function generateFromJsonFiles(dir: string, generate: () => void) {
-  generate();
-  if (!process.argv.includes("--watch")) return;
-
-  watch(dir, (_event, file) => {
-    if (!file?.endsWith(".json")) return;
-    try {
-      generate();
-    } catch (err: any) {
-      console.error("❌ Error:", err.message || err);
-    }
-  });
-  console.log("👀 watching…");
 }

@@ -1,7 +1,7 @@
 import { posix } from "node:path";
-import { writeFileContent } from "./utils/files";
-import { generateFromJsonFiles, overlayLang, readJsonFiles } from "./utils/jsonFiles";
-import { jsonSource } from "./utils/jsonSource";
+import { generateFromJsonFiles, readJsonFiles, writeFileContent } from "../utils-files/index.ts";
+import { overlayLang } from "../utils-node/index.ts";
+import { jsonSource } from "ultimus";
 
 /**
  * Generates a strings module: one `export const <name> = { … }` per `<name>.json` in `sourceDir`,

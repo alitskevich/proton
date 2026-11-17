@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, watch } from "node:fs";
 import { posix } from "node:path";
-import { writeFileContent } from "./utils/files";
-import { mapDirectoryFiles } from "./utils/mapDirectoryFiles";
+import { mapDirectoryFiles, writeFileContent } from "../utils-files/index.ts";
 
 /** `../cml/Foo.xml` — a specifier relative to the generated file, always explicitly relative. */
 const importSpecifier = (indexFile: string, sourceFile: string) => {

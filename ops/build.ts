@@ -1,6 +1,6 @@
 import * as esbuild from "esbuild";
-import { readFileJsonContent } from "./utils/files";
-import { getEsbuildOptions } from "./utils/getEsbuildOptions";
+import { readFileJsonContent } from "../utils-files/index.ts";
+import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
 
 export async function main(options: any = {}) {
   try {
@@ -8,7 +8,7 @@ export async function main(options: any = {}) {
     // `packages`, anything esbuild accepts — not just entry points. Libraries emitting CJS for
     // their `require` condition need that; apps still get the browser/ESM defaults by naming
     // only `entryPoints` and `outdir`. An explicit argument outranks the file.
-    const { esbuild: packageOptions = {} } = readFileJsonContent([`${process.cwd()}/package.json`]) ?? {};
+    const { esbuild: packageOptions = {} } = readFileJsonContent(`${process.cwd()}/package.json`) ?? {};
 
     // `servedir` is a dev-server-only option (serve.ts reads it directly); esbuild.build()
     // rejects it outright, so it must not survive into these options.

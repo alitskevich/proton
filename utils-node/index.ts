@@ -9,6 +9,8 @@ export * from "./net.ts";
 export * from "./nodeProbe.ts";
 export * from "./nodeProcesses.ts";
 export * from "./os.ts";
+export * from "./overlayLang.ts";
 export * from "./readline.ts";
+export * from "./runCommand.ts";
 export type * from "./types.ts";
 export * from "./url.ts";

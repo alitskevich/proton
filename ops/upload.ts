@@ -1,5 +1,5 @@
 import { assert } from "ultimus";
-import { readFileJsonContent } from "./utils/files";
+import { readFileJsonContent } from "../utils-files/index.ts";
 
 const { TARGET_URL, TOKEN } = process.env;
 const [, , file, url = TARGET_URL, token = TOKEN] = process.argv;

@@ -19,9 +19,9 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 | --- | --- |
 | `proton/devops` | `LOCAL_HOSTNAMES`, `isLocalHost`, `isLocalOrigin` — pure, safe in a dev server. See [devops/README.md](devops/README.md). |
 | `proton/hot` | The hot reload: `HotReloadService` and its bun server (`hot/server/main.ts`). See [hot/README.md](hot/README.md). |
-| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
-| `proton/utils-node` | The rest of Node: processes, network, http, crypto, os, url, readline. See [the Node.js boundary](#nodejs-boundary). |
-| `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`). |
+| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
+| `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). See [the Node.js boundary](#nodejs-boundary). |
+| `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`, beside `getEsbuildOptions`, the base options of `build` and `serve`). |
 | `proton/vite` | The same as a Vite plugin (`bundler/`). |
 
 `npm run gates` checks them: typecheck, lint and test.
@@ -66,7 +66,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |
 
-`utils/` holds the helpers these scripts share.
+The scripts share helpers from `utils-files`, `utils-node`, `bundler/` and `ultimus` (`jsonSource`); `ops/` holds scripts only.
 
 ## configs
 

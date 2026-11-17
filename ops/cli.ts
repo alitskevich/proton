@@ -11,7 +11,7 @@
 
 import { existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { runCommand } from "./utils/runCommand";
+import { runCommand } from "../utils-node/index.ts";
 
 const ops = fileURLToPath(new URL(".", import.meta.url));
 const [name = "", ...args] = process.argv.slice(2);

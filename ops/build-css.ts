@@ -12,7 +12,7 @@
 // without its bin.
 
 import { fileURLToPath } from "node:url";
-import { runCommand } from "./utils/runCommand";
+import { runCommand } from "../utils-node/index.ts";
 
 const tailwind = fileURLToPath(new URL("../node_modules/.bin/tailwindcss", import.meta.url));
 

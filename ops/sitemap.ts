@@ -12,7 +12,7 @@
 
 import { execFileSync } from "node:child_process";
 import { listFiles } from "./index-docs";
-import { writeFileContent } from "./utils/files";
+import { writeFileContent } from "../utils-files/index.ts";
 
 const HIDDEN = new Set(["CLAUDE.md", "INDEX.md"]);
 

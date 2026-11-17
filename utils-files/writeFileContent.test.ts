@@ -15,17 +15,17 @@ afterEach(() => {
 });
 
 describe("writeFileContent", () => {
-  it("writes trimmed text, creating missing parents", () => {
+  it("writes trimmed text with one final newline, creating missing parents", () => {
     const file = join(dir, "a", "x.md");
     writeFileContent(file, "  text\n\n");
-    expect(readFileSync(file, "utf8")).toBe("text");
+    expect(readFileSync(file, "utf8")).toBe("text\n");
   });
 
   it("awaits a promised text before writing", async () => {
     const file = join(dir, "y.md");
     const text = Promise.resolve("later ");
     await writeFileContent(file, text);
-    expect(readFileSync(file, "utf8")).toBe("later");
+    expect(readFileSync(file, "utf8")).toBe("later\n");
   });
 
   it("writes nothing for null", () => {

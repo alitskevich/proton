@@ -11,8 +11,8 @@
 
 import http from "node:http";
 import * as esbuild from "esbuild";
-import { readFileJsonContent } from "./utils/files";
-import { getEsbuildOptions } from "./utils/getEsbuildOptions";
+import { readFileJsonContent } from "../utils-files/index.ts";
+import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
@@ -49,7 +49,7 @@ type Upstreams = { bundler: { host: string; port: number }; backend?: string; ba
 
 export async function main(options: any = {}) {
   try {
-    const { name, esbuild: packageOptions = {} } = readFileJsonContent([`${process.cwd()}/package.json`]) ?? {};
+    const { name, esbuild: packageOptions = {} } = readFileJsonContent(`${process.cwd()}/package.json`) ?? {};
     // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is
     // this server's own and esbuild rejects it.
     const { servedir: packageServedir, ...packageBuildOptions } = packageOptions;

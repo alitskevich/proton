@@ -1,6 +1,6 @@
 import { posix } from "node:path";
-import { writeFileContent } from "./utils/files";
-import { generateFromJsonFiles, overlayLang, readJsonFiles } from "./utils/jsonFiles";
+import { generateFromJsonFiles, readJsonFiles, writeFileContent } from "../utils-files/index.ts";
+import { overlayLang } from "../utils-node/index.ts";
 
 /**
  * One `<name>.json` form. `$`-keys of a field are notes for the generated source, not data:
