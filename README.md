@@ -56,6 +56,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
 | `generate-catalog.ts [<dir,dir>] [outFile]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`). |
+| `reindex-jsdoc.ts` | Write `index.md`, the list of every export reachable from `./index.ts` with the first sentence of its JSDoc, grouped by `src/<dir>` module and sorted by title. Doc tags configure it: `@module <Title>` in each `src/<dir>/index.ts` (the rest of that block is the blurb), `@example <one line>` in `./index.ts` (the import line). |
 | `check-fresh.ts <npm script> <file or glob>…` | Fail when running the npm script changes any of the files: the generated files were stale. The result stays in place, to be committed. |
 | `generate-shapes.ts <sourceDir> <outFile> [--watch]` | Generate a module of `<name>Shape` `as const` row lists from `<sourceDir>/<name>.json` vocabularies (`{ items }`). |
 | `generate-forms.ts <sourceDir> <outFile> [--watch]` | Generate a `forms` module, typed by the `FormField` of the `types.ts` beside it, from `<sourceDir>/<name>.json` forms (`{ description?, fields }`; a field's `$comment` and `$off` become comments). |
