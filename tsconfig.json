@@ -3,7 +3,7 @@
   "compilerOptions": {
     "noImplicitAny": false,
     "types": [
-      "node"
+      "bun"
     ],
     "allowImportingTsExtensions": true
   },

@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
 import { isLocalHost, isLocalOrigin, LOCAL_HOSTNAMES } from "./index";
 
 describe("isLocalHost / isLocalOrigin", () => {

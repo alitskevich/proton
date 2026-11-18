@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
+import { basename } from "node:path";
 import { execText } from "./execText.ts";
 
 describe("execText", () => {
@@ -8,7 +9,7 @@ describe("execText", () => {
 
   it("rejects a non-zero exit with the command name, the code and stderr", async () => {
     await expect(execText(process.execPath, ["-e", 'console.error("boom"); process.exit(2)'])).rejects.toThrow(
-      /^node exited 2\nboom$/,
+      `${basename(process.execPath)} exited 2\nboom`,
     );
   });
 
@@ -19,6 +20,6 @@ describe("execText", () => {
   });
 
   it("rejects a command that cannot start", async () => {
-    await expect(execText("definitely-not-a-command-xyz", [])).rejects.toThrow(/ENOENT/);
+    await expect(execText("definitely-not-a-command-xyz", [])).rejects.toThrow(/ENOENT|not found/);
   });
 });

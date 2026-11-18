@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { HOT_SETTLE_MS } from "../config";
 import { createDistTracker, hotEvent } from "./tracker";
 

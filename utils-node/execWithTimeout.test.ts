@@ -1,7 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { execWithTimeout } from "./execWithTimeout.ts";
 
 let dir: string;
@@ -29,7 +29,7 @@ describe("execWithTimeout", () => {
 
   it("reports a command that cannot start in stderr, never rejecting", async () => {
     const result = await execWithTimeout("definitely-not-a-command-xyz", [], "", dir, 5);
-    expect(result.stderr).toMatch(/ENOENT/);
+    expect(result.stderr).toMatch(/ENOENT|not found/);
     expect(result.timedOut).toBe(false);
   });
 });

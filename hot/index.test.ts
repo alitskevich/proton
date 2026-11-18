@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
 import { components } from "./index";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");

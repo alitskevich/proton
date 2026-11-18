@@ -1,6 +1,6 @@
+import { describe, expect, it } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
 
 const MODULE = join(import.meta.dirname, "runCommand.ts");
 
