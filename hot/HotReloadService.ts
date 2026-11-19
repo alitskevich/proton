@@ -9,8 +9,10 @@
  */
 
 import { Component, type IEntitronRoot } from "arrmatura";
-import { isLocalHost } from "../devops";
 import { HOT_HOST, HOT_PATH } from "./config";
+
+/** True for a hostname of this machine. */
+const isLocalHost = (hostname: string) => ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
 
 /** True when `href` is a file of `origin` whose name is one of `files`; the query does not count. */
 export function isChanged(href: string, files: string[], origin: string): boolean {

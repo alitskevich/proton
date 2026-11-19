@@ -2,7 +2,8 @@
 #
 # Usage: <path-to>/proton/ops/link-modules.sh
 #
-# Links the library checkouts of the libs folder (the one holding proton, ~/Projects/libs) into
+# First clones the library checkouts missing from the libs folder (clone-modules.sh).
+# Then links the library checkouts of the libs folder (the one holding proton, ~/Projects/libs) into
 # ./node_modules of the current directory, so the project builds and runs against library source:
 # tsc, esbuild, bun test and Tailwind read each package's `exports` map from there. A library is a
 # folder with a package.json; only those named in the current directory's package.json
@@ -12,6 +13,7 @@ set -eu
 
 proton="$(cd "$(dirname "$0")/.." && pwd)"
 libs="$(dirname "$proton")"
+"$proton/ops/clone-modules.sh" >&2
 mkdir -p node_modules
 wanted="$(jq -r '((.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {})) | keys[]' package.json)"
 

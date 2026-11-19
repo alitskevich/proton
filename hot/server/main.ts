@@ -8,9 +8,17 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, watch } from "node:fs";
 import { createServer, type ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
-import { isLocalOrigin } from "../../devops";
 import { HOT_HOST, HOT_PATH } from "../config";
 import { createDistTracker, hotEvent } from "./tracker";
+
+/** True for an `Origin` header whose host is this machine; a malformed origin is not local. */
+function isLocalOrigin(origin: string): boolean {
+  try {
+    return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
+}
 
 const [dirArg, portArg] = process.argv.slice(2);
 const hotPort = Number(portArg);

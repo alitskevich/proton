@@ -8,7 +8,6 @@
     "proton": "bin/index.ts"
   },
   "exports": {
-    "./devops": "./devops/index.ts",
     "./hot": "./hot/index.ts",
     "./utils-node": "./utils-node/index.ts",
     "./utils-files": "./utils-files/index.ts",
@@ -17,10 +16,10 @@
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./devops ./hot ./utils-node ./utils-files ./bundler",
-    "lint:fix": "biome check --write ./devops ./hot ./utils-node ./utils-files ./bundler",
+    "lint": "biome check ./hot ./utils-node ./utils-files ./bundler",
+    "lint:fix": "biome check --write ./hot ./utils-node ./utils-files ./bundler",
     "release": "./ops/release.sh",
-    "test": "bun test devops hot utils-node utils-files bundler",
+    "test": "bun test hot utils-node utils-files bundler",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"

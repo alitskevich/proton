@@ -17,7 +17,6 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 | Export | What |
 | --- | --- |
-| `proton/devops` | `LOCAL_HOSTNAMES`, `isLocalHost`, `isLocalOrigin` — pure, safe in a dev server. See [devops/README.md](devops/README.md). |
 | `proton/hot` | The hot reload: `HotReloadService` and its bun server (`hot/server/main.ts`). See [hot/README.md](hot/README.md). |
 | `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
 | `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). See [the Node.js boundary](#nodejs-boundary). |
@@ -48,7 +47,8 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 
 | Script | Purpose |
 | --- | --- |
-| `link-modules.sh` | Symlink the libraries of `~/Projects/libs` named in the project's `dependencies`/`devDependencies` into `./node_modules` (`postinstall`). |
+| `link-modules.sh` | Symlink the libraries of `~/Projects/libs` named in the project's `dependencies`/`devDependencies` into `./node_modules` (`postinstall`). Runs `clone-modules.sh` first. |
+| `clone-modules.sh` | Clone the libraries missing from `~/Projects/libs` (hardcoded list of repos). |
 | `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
 | `build-css.ts [input] [output] [--watch] [--minify]` | Tailwind CSS build (defaults: `index.css`, `www/dist/index.css`); `-` flags pass through to the Tailwind CLI, which is proton's own dependency. |
 | `hot.ts <dir> <port>` | The hot reload server (`hot/server/main.ts`); see [hot/README.md](hot/README.md). |
