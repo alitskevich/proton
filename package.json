@@ -8,29 +8,29 @@
     "proton": "bin/index.ts"
   },
   "exports": {
-    "./hot": "./hot/index.ts",
     "./utils-node": "./utils-node/index.ts",
     "./utils-files": "./utils-files/index.ts",
+    "./getEsbuildOptions": "./bundler/getEsbuildOptions.ts",
     "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
     "./vite": "./bundler/arrmaturaTemplatePluginVite.ts"
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./hot ./utils-node ./utils-files ./bundler",
-    "lint:fix": "biome check --write ./hot ./utils-node ./utils-files ./bundler",
+    "lint": "biome check ./utils-node ./utils-files ./bundler ./ops/hot",
+    "lint:fix": "biome check --write ./utils-node ./utils-files ./bundler ./ops/hot",
     "release": "./ops/release.sh",
-    "test": "bun test hot utils-node utils-files bundler",
+    "test": "bun test utils-node utils-files bundler ops/hot",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.3.5",
+    "@types/bun": "^1.4.4",
     "esbuild": "^0.28.2",
     "google-auth-library": "^11.3.1"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.4",
     "arrmatura": "github:arrmatura/arrmatura#semver:^7.0.1",
     "ultimus": "github:arrmatura/ultimus#semver:^2.3.9"
   }

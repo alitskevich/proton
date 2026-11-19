@@ -17,10 +17,10 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 | Export | What |
 | --- | --- |
-| `proton/hot` | The hot reload: `HotReloadService` and its bun server (`hot/server/main.ts`). See [hot/README.md](hot/README.md). |
 | `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
 | `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). See [the Node.js boundary](#nodejs-boundary). |
 | `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`, beside `getEsbuildOptions`, the base options of `build` and `serve`). |
+| `proton/getEsbuildOptions` | The base options of `build` and `serve` (browser ESM bundle, with the `proton/esbuild` plugin), for a script that bundles by itself. |
 | `proton/vite` | The same as a Vite plugin (`bundler/`). |
 
 `npm run gates` checks them: typecheck, lint and test.
@@ -51,8 +51,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `clone-modules.sh` | Clone the libraries missing from `~/Projects/libs` (hardcoded list of repos). |
 | `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
 | `build-css.ts [input] [output] [--watch] [--minify]` | Tailwind CSS build (defaults: `index.css`, `www/dist/index.css`); `-` flags pass through to the Tailwind CLI, which is proton's own dependency. |
-| `hot.ts <dir> <port>` | The hot reload server (`hot/server/main.ts`); see [hot/README.md](hot/README.md). |
-| `serve.ts` | esbuild dev server with watch; `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
+| `serve.ts [--hot]` | esbuild dev server with watch; `--hot` serves the hot reload stream at `/__hot` ([`arrmatura-web/hot`](../arrmatura-web/modules/hot/README.md)); `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
 | `generate-catalog.ts [<dir,dir>] [outFile]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`). |

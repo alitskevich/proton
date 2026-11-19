@@ -8,9 +8,9 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "hot",
     "utils-node",
     "utils-files",
-    "bundler"
+    "bundler",
+    "ops/hot"
   ]
 }

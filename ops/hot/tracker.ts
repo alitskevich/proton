@@ -1,10 +1,10 @@
 /**
- * The hot server's change tracker, pure over `fingerprint` and `emit`: `main.ts` feeds it the names
+ * The hot server's change tracker, pure over `fingerprint` and `emit`: `watchHot` of `ops/serve.ts` feeds it the names
  * `fs.watch` reports. A burst of writes is reported once, `HOT_SETTLE_MS` after the last of them, and
  * only the files whose content changed; a source map is never reported.
  */
 
-import { HOT_SETTLE_MS } from "../config";
+const HOT_SETTLE_MS = 2_000;
 
 type TrackerOptions = {
   /** The content's fingerprint of a file in the folder, or `null` when there is no such file. */

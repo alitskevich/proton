@@ -1,5 +1,5 @@
-// import { arrmaturaTemplatePlugin } from "./arrmaturaTemplatePlugin";
 import type { BuildOptions } from "esbuild";
+import { cmlPlugin } from "./arrmaturaTemplatePluginEsbuild";
 
 export function getEsbuildOptions({
   entryPoints = ["src/index.ts"],
@@ -21,7 +21,8 @@ export function getEsbuildOptions({
     target: "esnext",
     minify: true,
     keepNames: true,
-    plugins: [...plugins], //arrmaturaTemplatePlugin,
+    // An `.xml` import is its pre-parsed component list.
+    plugins: [...plugins, cmlPlugin],
     loader: {
       ".xml": "text",
       ".md": "text",

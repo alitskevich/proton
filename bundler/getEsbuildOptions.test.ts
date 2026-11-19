@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { cmlPlugin } from "./arrmaturaTemplatePluginEsbuild";
 import { getEsbuildOptions } from "./getEsbuildOptions";
 
 describe("getEsbuildOptions", () => {
@@ -11,7 +12,7 @@ describe("getEsbuildOptions", () => {
       format: "esm",
       sourcemap: "external",
       minify: true,
-      plugins: [],
+      plugins: [cmlPlugin],
       loader: { ".xml": "text", ".md": "text", ".png": "file", ".svg": "file" },
     });
   });

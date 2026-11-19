@@ -7,12 +7,17 @@
 //   PROXY          an app back end: requests under PROXY_PATHS (comma-separated) go to it.
 //                  The front server then takes PORT and esbuild moves to a loopback port.
 //
-// Live reload lives in the front server, so it is on whenever PROXY_PORT or PROXY is set.
+// Live reload lives in the front server, so it is on whenever PROXY_PORT or PROXY is set, unless --hot.
+//
+//   --hot          hot reload (see arrmatura-web/modules/hot/README.md): the front server takes PORT and streams each batch of changed
+//                  files of the bundle's output folder to the pages connected to its `HOT_PATH`. A page is
+//                  relaunched in place, so this replaces the page reload of PROXY_PORT / PROXY.
 
 import http from "node:http";
 import * as esbuild from "esbuild";
 import { readFileJsonContent } from "../utils-files/index.ts";
 import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
+import { watchHot } from "./hot/watchHot.ts";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
@@ -45,11 +50,17 @@ function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerRes
 }
 
 /** Where the front server sends requests: esbuild, and optionally a back end for some paths. */
-type Upstreams = { bundler: { host: string; port: number }; backend?: string; backendPaths: string[] };
+type Upstreams = {
+  bundler: { host: string; port: number };
+  backend?: string;
+  backendPaths: string[];
+  /** The hot reload handler; with it, the page is relaunched in place and never reloaded. */
+  hot?: (req: http.IncomingMessage, res: http.ServerResponse) => boolean;
+};
 
 export async function main(options: any = {}) {
   try {
-    const { name, esbuild: packageOptions = {} } = readFileJsonContent(`${process.cwd()}/package.json`) ?? {};
+    const { name, esbuild: packageOptions = {} } = readFileJsonContent(`${process.cwd()}/package.json`) as any ?? { name: "client", esbuild: {} };
     // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is
     // this server's own and esbuild rejects it.
     const { servedir: packageServedir, ...packageBuildOptions } = packageOptions;
@@ -65,7 +76,9 @@ export async function main(options: any = {}) {
       ...buildOptions
     } = options;
 
-    const proxyPort = process.env.PROXY_PORT ? Number(process.env.PROXY_PORT) : backend ? port : undefined;
+    const hot = process.argv.includes("--hot");
+    const outdir = buildOptions.outdir ?? `${servedir}/dist`;
+    const proxyPort = process.env.PROXY_PORT ? Number(process.env.PROXY_PORT) : backend || hot ? port : undefined;
     // When the front server takes PORT, esbuild picks its own port on loopback.
     const bundlerOnLoopback = proxyPort === port;
 
@@ -74,7 +87,7 @@ export async function main(options: any = {}) {
     const ctx = await esbuild.context(
       getEsbuildOptions({
         ...packageBuildOptions,
-        outdir: `${servedir}/dist`,
+        outdir,
         // Dev only: link the map so devtools pick it up. Production builds (build.ts) keep
         // the "external" default, which emits no sourceMappingURL reference.
         sourcemap: "linked",
@@ -90,7 +103,7 @@ export async function main(options: any = {}) {
       servedir,
       fallback,
       ...(bundlerOnLoopback ? { host: "127.0.0.1" } : { port, host }),
-      onRequest: ({ method, path, status }) => {
+      onRequest: ({ method, path, status }: any) => {
         console.log(`>> ${method}${path} - ${status}`);
       },
     };
@@ -108,7 +121,12 @@ export async function main(options: any = {}) {
       return;
     }
 
-    const upstreams: Upstreams = { bundler: { host: serveHosts[0], port: servePort }, backend, backendPaths };
+    const upstreams: Upstreams = {
+      bundler: { host: serveHosts[0], port: servePort },
+      backend,
+      backendPaths,
+      hot: hot ? watchHot(outdir) : undefined,
+    };
     await startProxy(host, proxyPort, upstreams, clients);
 
     if (!bundlerOnLoopback) {
@@ -128,13 +146,15 @@ export async function main(options: any = {}) {
 main();
 
 function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clients: Set<http.ServerResponse>) {
-  const { bundler, backend, backendPaths } = upstreams;
-  relayChanges(bundler, clients);
+  const { bundler, backend, backendPaths, hot } = upstreams;
+  if (!hot) relayChanges(bundler, clients);
   const server = http.createServer((req, res) => {
     const url = req.url ?? "/";
 
-    // SSE endpoint for hot reload
-    if (url === LIVERELOAD_PATH) {
+    if (hot?.(req, res)) return;
+
+    // SSE endpoint for live reload
+    if (!hot && url === LIVERELOAD_PATH) {
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -191,7 +211,7 @@ function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clien
       const contentType = proxyRes.headers["content-type"] ?? "";
 
       // Inject live-reload script into HTML responses
-      if (contentType.includes("text/html")) {
+      if (!hot && contentType.includes("text/html")) {
         const chunks: Uint8Array[] = [];
         proxyRes.on("data", (chunk) => chunks.push(chunk));
         proxyRes.on("end", () => {

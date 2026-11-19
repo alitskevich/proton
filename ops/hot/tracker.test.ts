@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
-import { HOT_SETTLE_MS } from "../config";
 import { createDistTracker, hotEvent } from "./tracker";
+
+const HOT_SETTLE_MS = 2_000;
 
 describe("createDistTracker", () => {
   /** A dist folder held in memory: name → fingerprint; a missing name has no file. */
