@@ -54,7 +54,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `serve.ts [--hot]` | esbuild dev server with watch; `--hot` serves the hot reload stream at `/__hot` ([`arrmatura-web/hot`](../arrmatura-web/modules/hot/README.md)); `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
 | `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
-| `generate-catalog.ts [<dir,dir>] [outFile] [--extended]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`); `--extended` adds each one's `<Prop>`s as `properties` and `<State>`s as `states`. |
+| `generate-catalog.ts [<dir,dir>] [outFile] [--extended]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`); `--extended` adds each one's `<Prop>`s and `<State>`s as `properties`, told apart by `kind`. |
 | `check-fresh.ts <npm script> <file or glob>…` | Fail when running the npm script changes any of the files: the generated files were stale. The result stays in place, to be committed. |
 | `generate-shapes.ts <sourceDir> <outFile> [--watch]` | Generate a module of `<name>Shape` `as const` row lists from `<sourceDir>/<name>.json` vocabularies (`{ items }`). |
 | `generate-forms.ts <sourceDir> <outFile> [--watch]` | Generate a `forms` module, typed by the `FormField` of the `types.ts` beside it, from `<sourceDir>/<name>.json` forms (`{ description?, fields }`; a field's `$comment` and `$off` become comments). |

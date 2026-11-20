@@ -7,7 +7,7 @@ import { type Scalar, type XmlNode, xmlParse } from "ultimus";
 const ROOT_DIR = path.resolve(".");
 // `generate-catalog.ts [sourceDirs] [outFile] [--extended]`, source dirs comma-separated and relative to cwd.
 // Defaults keep the single-kit call sites (`cd ./atomic && generate-catalog.ts`) working unchanged.
-// `--extended` adds each signature's `<Prop>`s as `properties` and its `<State>`s as `states`.
+// `--extended` adds each signature's `<Prop>`s and `<State>`s as `properties`, told apart by `kind`.
 const ARGS = process.argv.slice(2);
 const EXTENDED = ARGS.includes("--extended");
 const [DIRS_ARG, OUT_ARG] = ARGS.filter((a) => !a.startsWith("--"));
@@ -30,11 +30,12 @@ function collectComponents(nodes: XmlNode[] | undefined): XmlNode[] {
 const text = (value: Scalar | null | undefined) => (value == null ? undefined : String(value));
 
 /** A `<Prop>`, `<State>` or `<Var>` as catalog data: its attributes, `id` as `name`, `enum` split on commas. */
-function propertyOf({ attrs }: XmlNode): ComponentPropertyDefinition {
+function propertyOf({ attrs }: XmlNode, kind: ComponentPropertyDefinition["kind"]): ComponentPropertyDefinition {
   const { id, type, required, enum: values, ...rest } = attrs ?? {};
   return {
     name: text(id) ?? "",
     type: text(type) ?? "any",
+    kind,
     ...(required === true ? { required } : {}),
     ...(values == null
       ? {}
@@ -47,12 +48,17 @@ function propertyOf({ attrs }: XmlNode): ComponentPropertyDefinition {
   };
 }
 
-/** A service's `<State id>` is one output; a template's `<State>` wraps one `<Var>` per local variable. */
-const statesOf = (nodes: XmlNode[]) =>
-  nodes
-    .filter((n) => n.tag === "State")
-    .flatMap((n) => (n.attrs?.id ? [n] : (n.nodes ?? []).filter((v) => v.tag === "Var")))
-    .map(propertyOf);
+/**
+ * A Signature's `<Prop>`s and `<State>`s in document order. A service's `<State id>` is one output; a template's
+ * `<State>` wraps one `<Var>` per local variable.
+ */
+const propertiesOf = (nodes: XmlNode[]) =>
+  nodes.flatMap((n) => {
+    if (n.tag === "Prop") return [propertyOf(n, "prop")];
+    if (n.tag !== "State") return [];
+    const states = n.attrs?.id ? [n] : (n.nodes ?? []).filter((v) => v.tag === "Var");
+    return states.map((v) => propertyOf(v, "state"));
+  });
 
 /** Absolute paths of every catalogable `.xml` under one source dir, sorted for a stable diff. */
 async function scan(dir: string) {
@@ -110,12 +116,7 @@ async function main() {
           name: text(attrs.name) ?? id,
           group: text(attrs.group),
           file,
-          ...(EXTENDED
-            ? {
-                properties: (signatureNode.nodes ?? []).filter((n) => n.tag === "Prop").map(propertyOf),
-                states: statesOf(signatureNode.nodes ?? []),
-              }
-            : {}),
+          ...(EXTENDED ? { properties: propertiesOf(signatureNode.nodes ?? []) } : {}),
         };
 
         catalog.push(signature);
