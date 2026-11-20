@@ -1,18 +1,22 @@
 import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import type { ComponentSignature } from "arrmatura";
+import type { ComponentPropertyDefinition, ComponentSignature } from "arrmatura";
 import { type Scalar, type XmlNode, xmlParse } from "ultimus";
 
 const ROOT_DIR = path.resolve(".");
-// `generate-catalog.ts [sourceDirs] [outFile]`, source dirs comma-separated and relative to cwd.
+// `generate-catalog.ts [sourceDirs] [outFile] [--extended]`, source dirs comma-separated and relative to cwd.
 // Defaults keep the single-kit call sites (`cd ./atomic && generate-catalog.ts`) working unchanged.
-const SOURCE_DIRS = (process.argv[2] || "cml")
+// `--extended` adds each signature's `<Prop>`s as `properties` and its `<State>`s as `states`.
+const ARGS = process.argv.slice(2);
+const EXTENDED = ARGS.includes("--extended");
+const [DIRS_ARG, OUT_ARG] = ARGS.filter((a) => !a.startsWith("--"));
+const SOURCE_DIRS = (DIRS_ARG || "cml")
   .split(",")
   .map((d) => d.trim())
   .filter(Boolean)
   .map((d) => path.join(ROOT_DIR, d));
-const OUTPUT_PATH = path.join(ROOT_DIR, process.argv[3] || "catalog.json");
+const OUTPUT_PATH = path.join(ROOT_DIR, OUT_ARG || "catalog.json");
 
 // `<Component>` may sit at the root or inside a wrapper (`<Components>`, `<components>`), so collect by
 // walking instead of special-casing the wrapper name. Does not descend into a component's own body.
@@ -24,6 +28,31 @@ function collectComponents(nodes: XmlNode[] | undefined): XmlNode[] {
 
 /** An attribute as catalog text; xmlParse coerces values to scalars. */
 const text = (value: Scalar | null | undefined) => (value == null ? undefined : String(value));
+
+/** A `<Prop>`, `<State>` or `<Var>` as catalog data: its attributes, `id` as `name`, `enum` split on commas. */
+function propertyOf({ attrs }: XmlNode): ComponentPropertyDefinition {
+  const { id, type, required, enum: values, ...rest } = attrs ?? {};
+  return {
+    name: text(id) ?? "",
+    type: text(type) ?? "any",
+    ...(required === true ? { required } : {}),
+    ...(values == null
+      ? {}
+      : {
+          enum: String(values)
+            .split(",")
+            .map((v) => v.trim()),
+        }),
+    ...rest,
+  };
+}
+
+/** A service's `<State id>` is one output; a template's `<State>` wraps one `<Var>` per local variable. */
+const statesOf = (nodes: XmlNode[]) =>
+  nodes
+    .filter((n) => n.tag === "State")
+    .flatMap((n) => (n.attrs?.id ? [n] : (n.nodes ?? []).filter((v) => v.tag === "Var")))
+    .map(propertyOf);
 
 /** Absolute paths of every catalogable `.xml` under one source dir, sorted for a stable diff. */
 async function scan(dir: string) {
@@ -81,26 +110,13 @@ async function main() {
           name: text(attrs.name) ?? id,
           group: text(attrs.group),
           file,
-          // properties: [],
-          // events: [],
-          // slots: [],
+          ...(EXTENDED
+            ? {
+                properties: (signatureNode.nodes ?? []).filter((n) => n.tag === "Prop").map(propertyOf),
+                states: statesOf(signatureNode.nodes ?? []),
+              }
+            : {}),
         };
-
-        // signatureNode.nodes?.forEach((n: any) => {
-        //   if (n.tag === "Prop") {
-        //     const prop: ComponentPropertyDefinition = {
-        //       ...n.attrs,
-        //       name: n.attrs?.name ?? n.attrs?.id,
-        //       type: (n.attrs?.type as any) || "any",
-        //       required: n.attrs?.required === true || n.attrs?.required === "true",
-        //       description: n.attrs?.description as string,
-        //       default: n.attrs?.default,
-        //       enum: n.attrs?.enum ? (n.attrs.enum as string).split(",") : undefined,
-        //     };
-        //     signature.properties.push(prop);
-        //   }
-        //   // Future: handle Event, Slot
-        // });
 
         catalog.push(signature);
       }
