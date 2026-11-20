@@ -114,6 +114,7 @@ async function main() {
           description: text(attrs.description) ?? id,
           purpose: text(attrs.purpose),
           name: text(attrs.name) ?? id,
+          icon: text(attrs.icon),
           group: text(attrs.group),
           file,
           ...(EXTENDED ? { properties: propertiesOf(signatureNode.nodes ?? []) } : {}),
