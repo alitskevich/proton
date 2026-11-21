@@ -1,6 +1,7 @@
 /** The one door to Node.js, except the file system (`utils-files`). */
 export * from "./childProcess.ts";
 export * from "./crypto.ts";
+export * from "./dns.ts";
 export * from "./execText.ts";
 export * from "./execWithTimeout.ts";
 export * from "./http.ts";
