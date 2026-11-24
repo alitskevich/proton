@@ -61,6 +61,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
 | `download-sheets.ts <spreadsheetId> [outFile]` | Dump a Google Spreadsheet as `{ sheet: rows[] }` JSON (stdout, one file, or one per `{sheet}`); Application Default Credentials. |
+| `google-login.ts <scope>…` | Sign in to Google once through the Desktop OAuth client `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (`~/.keys/.env`) and print `GOOGLE_OAUTH='{clientId, clientSecret, refreshToken}'` to append there (`utils-node/loginGoogle`). |
 | `release.sh [patch\|minor\|major\|<version>]` | Release the current package as a GitHub dependency: from a clean `main` in step with `origin`, run `gates`, bump `version` (default `patch`), commit, tag `v<version>`, push both. proton's own `npm run release` runs it. |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |

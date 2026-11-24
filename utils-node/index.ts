@@ -6,6 +6,7 @@ export * from "./execText.ts";
 export * from "./execWithTimeout.ts";
 export * from "./http.ts";
 export * from "./isProcessAlive.ts";
+export * from "./loginGoogle.ts";
 export * from "./net.ts";
 export * from "./nodeProbe.ts";
 export * from "./nodeProcesses.ts";

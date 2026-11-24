@@ -8,5 +8,6 @@ export * from "./path.ts";
 export * from "./readFileJsonContent.ts";
 export * from "./readJsonFiles.ts";
 export * from "./readKeysEnv.ts";
+export * from "./requireKey.ts";
 export type * from "./types.ts";
 export * from "./writeFileContent.ts";
