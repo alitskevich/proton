@@ -57,6 +57,7 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `generate-catalog.ts [<dir,dir>] [outFile] [--extended]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`); `--extended` adds each one's `<Prop>`s and `<State>`s as `properties`, told apart by `kind`. |
 | `check-fresh.ts <npm script> <file or glob>…` | Fail when running the npm script changes any of the files: the generated files were stale. The result stays in place, to be committed. |
 | `generate-shapes.ts <sourceDir> <outFile> [--watch]` | Generate a module of `<name>Shape` `as const` row lists from `<sourceDir>/<name>.json` vocabularies (`{ items }`). |
+| `generate-enums.ts <sourceDir> <outFile> [--watch]` | Generate a Zod module from the same vocabularies as `generate-shapes`: per `<name>.json`, `Z<Name>` (`z.enum` of its ids) and `T<Name>` (its type); the `$comment` is the doc comment. The project provides `zod`. |
 | `generate-forms.ts <sourceDir> <outFile> [--watch]` | Generate a `forms` module, typed by the `FormField` of the `types.ts` beside it, from `<sourceDir>/<name>.json` forms (`{ description?, fields }`; a field's `$comment` and `$off` become comments). |
 | `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
