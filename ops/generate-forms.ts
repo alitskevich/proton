@@ -4,9 +4,17 @@ import { overlayLang } from "../utils-node/index.ts";
 
 /**
  * One `<name>.json` form. `$`-keys of a field are notes for the generated source, not data:
- * `$comment` becomes a `//` line above the field, `$off: true` writes the field commented out.
+ * `$comment` becomes `//` lines above the field, `$off: true` writes the field commented out.
+ * `extends: "<name>"` puts that form's fields first, only the `pick`ed ones when given, none `required` when `partial`;
+ * `loose`/`strict` (unknown keys kept/rejected) are a Zod matter, read by `generate-structs`.
  */
-type FormSource = { description?: string; fields: Record<string, unknown>[] };
+type FormSource = {
+  description?: string;
+  extends?: string;
+  pick?: string[];
+  partial?: boolean;
+  fields: Record<string, unknown>[];
+};
 
 /** `{ id: "x", name: "y" }` — a flat object literal on one line, keys unquoted where they can be. */
 const literal = (o: Record<string, unknown>) =>
@@ -15,16 +23,27 @@ const literal = (o: Record<string, unknown>) =>
     .join(", ")} }`;
 
 const fieldLines = ({ $comment, $off, ...field }: Record<string, unknown>) => [
-  ...($comment ? [`// ${$comment}`] : []),
+  ...($comment ? String($comment).split("\n").map((l) => `// ${l}`) : []),
   `${$off ? "// " : ""}${literal(field)},`,
 ];
 
-const formLines = (name: string, form: FormSource) => {
+/** A form's own fields after the fields of the form it `extends`, and of that form's parent, first. */
+const fieldsOf = (name: string, all: Map<string, FormSource>, seen: string[] = []): Record<string, unknown>[] => {
+  const form = all.get(name);
   if (!Array.isArray(form?.fields)) throw new Error(`${name}.json: expected { "fields": [...] }`);
+  if (seen.includes(name)) throw new Error(`${name}.json: an extends cycle`);
+  const inherited = form.extends ? fieldsOf(form.extends, all, [...seen, name]) : [];
+  const picked = form.pick ? inherited.filter((f) => form.pick?.includes(f.id as string)) : inherited;
+  const parent = form.partial ? picked.map(({ required: _, ...f }) => f) : picked;
+  return [...parent, ...form.fields];
+};
+
+const formLines = (name: string, form: FormSource, all: Map<string, FormSource>) => {
+  const fields = fieldsOf(name, all);
   return [
     ...(form.description ? ["/**", ...form.description.split("\n").map((l) => ` * ${l}`), " */"] : []),
     `${name}: [`,
-    ...form.fields.flatMap(fieldLines).map((l) => `  ${l}`),
+    ...fields.flatMap(fieldLines).map((l) => `  ${l}`),
     "],",
   ];
 };
@@ -41,7 +60,8 @@ const formLines = (name: string, form: FormSource) => {
  */
 export function generateForms({ sourceDir, outFile, lang }: { sourceDir: string; outFile: string; lang?: string }) {
   const forms = readJsonFiles(sourceDir, lang);
-  const lines = forms.flatMap(([name, form]) => formLines(name, form as FormSource));
+  const all = new Map(forms.map(([name, form]) => [name, form as FormSource]));
+  const lines = forms.flatMap(([name, form]) => formLines(name, form as FormSource, all));
 
   writeFileContent(
     posix.resolve(outFile),
@@ -53,7 +73,7 @@ export type { FormField };
 export const forms = {
 ${lines.map((l) => `  ${l}`).join("\n")}
 } satisfies Record<string, FormField[]>;
-`
+`,
   );
 
   console.log(`Generate forms: ${sourceDir} -> ${outFile} (${forms.length})`);
@@ -64,6 +84,7 @@ ${lines.map((l) => `  ${l}`).join("\n")}
 // `--watch` regenerates on every `.json` change; a broken file is reported and the watch goes on.
 // `--overlay=<lang>` writes that language's overlay instead of the base — see `readJsonFiles`.
 const [sourceDir, outFile] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-if (!sourceDir || !outFile) throw new Error("usage: generate-forms.ts <sourceDir> <outFile> [--overlay=<lang>] [--watch]");
+if (!sourceDir || !outFile)
+  throw new Error("usage: generate-forms.ts <sourceDir> <outFile> [--overlay=<lang>] [--watch]");
 
 generateFromJsonFiles(sourceDir, () => generateForms({ sourceDir, outFile, lang: overlayLang() }));
