@@ -2,26 +2,8 @@
 
 export type { IncomingMessage, ServerResponse } from "node:http";
 
-/** Exactly one of `argv` (no shell) or `shell` (run through the shell) is set. */
-export type SpawnSpec = {
-  argv?: string[];
-  shell?: string;
-  cwd: string;
-  env: Record<string, string | undefined>;
-};
-
-export type ProcessHandle = {
-  pid: number;
-  onData(listener: (stream: "stdout" | "stderr", chunk: string) => void): void;
-  /** `null` when the process was killed by a signal. */
-  onExit(listener: (code: number | null) => void): void;
-  /** SIGTERM to the whole process group. */
-  kill(): void;
-};
-
-export type ProcessPort = {
-  spawn(spec: SpawnSpec): ProcessHandle;
-};
+/** The types of `nodeProcesses`, owned by `arrmatura-fs/processes`. */
+export type { ProcessHandle, ProcessPort, SpawnSpec } from "arrmatura-fs/processes";
 
 export type ProbePort = {
   isListening(port: number, timeoutMs: number): Promise<boolean>;

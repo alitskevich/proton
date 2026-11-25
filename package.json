@@ -19,7 +19,7 @@
     "lint": "biome check ./utils-node ./utils-files ./bundler ./ops/hot",
     "lint:fix": "biome check --write ./utils-node ./utils-files ./bundler ./ops/hot",
     "release": "./ops/release.sh",
-    "test": "bun test utils-node utils-files bundler ops/hot",
+    "test": "bun test utils-node bundler ops/hot",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"
@@ -33,5 +33,13 @@
   "devDependencies": {
     "arrmatura": "github:arrmatura/arrmatura#semver:^7.0.1",
     "ultimus": "github:arrmatura/ultimus#semver:^2.3.9"
+  },
+  "peerDependencies": {
+    "arrmatura-fs": "github:arrmatura/arrmatura-fs#semver:^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "arrmatura-fs": {
+      "optional": true
+    }
   }
 }

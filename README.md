@@ -13,12 +13,12 @@ Keep each shared utility in one home, so sibling projects stop copying it.
 
 ## Imported code
 
-Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project lists the sibling checkout as a `file:` dependency — an app as `"proton": "file://../../libs/proton"`, a library in `libs/` as `"proton": "file://../proton"` — never a registry version: the name on npm belongs to someone else. Outside the `~/Projects` checkout, a project depends on a release tag instead: `"proton": "github:alitskevich/proton#semver:^1.0.0"`. proton imports `ultimus` and `arrmatura` but does not install them, so the project lists both itself.
+Code a project imports rather than runs, addressed as `proton/<name>`. `proton` is private and unpublished, so a project lists the sibling checkout as a `file:` dependency — an app as `"proton": "file://../../libs/proton"`, a library in `libs/` as `"proton": "file://../proton"` — never a registry version: the name on npm belongs to someone else. Outside the `~/Projects` checkout, a project depends on a release tag instead: `"proton": "github:alitskevich/proton#semver:^1.0.0"`. proton imports `ultimus`, `arrmatura` and `arrmatura-fs` but does not install them, so the project lists them itself.
 
 | Export | What |
 | --- | --- |
-| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). See [the Node.js boundary](#nodejs-boundary). |
-| `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). See [the Node.js boundary](#nodejs-boundary). |
+| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). A re-export of [`arrmatura-fs/files`](../arrmatura-fs/README.md#the-files-door), which owns the code. See [the Node.js boundary](#nodejs-boundary). |
+| `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). Its `nodeProcesses` and the types of it are a re-export of [`arrmatura-fs/processes`](../arrmatura-fs/README.md#the-processes-door). See [the Node.js boundary](#nodejs-boundary). |
 | `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`, beside `getEsbuildOptions`, the base options of `build` and `serve`). |
 | `proton/getEsbuildOptions` | The base options of `build` and `serve` (browser ESM bundle, with the `proton/esbuild` plugin), for a script that bundles by itself. |
 | `proton/vite` | The same as a Vite plugin (`bundler/`). |
@@ -27,17 +27,21 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 ### Node.js boundary
 
-`utils-files` and `utils-node` are the only door to Node.js built-ins for a project that keeps them out of its own code (almaster lints for it). Their rules:
+`utils-files` and `utils-node` are the only door to Node.js built-ins for a project that keeps them out of its own code (almaster lints for it).
 
-- 🔒 Each imports Node directly, so neither depends on the other.
-- 🔒 Export only what code outside them uses. When the last outside user goes, the export goes too.
+`utils-files` is one line: it re-exports `arrmatura-fs/files`, the sibling library that owns the file system since 2026-11-25. Its code, tests and rules are [there](../arrmatura-fs/README.md#the-files-door); a missing file-system function or helper is added there. In the same way `utils-node` re-exports `nodeProcesses`, `ProcessPort`, `SpawnSpec` and `ProcessHandle` from `arrmatura-fs/processes`. Both entries import Node only and arrmatura-fs imports nothing of proton, so neither re-export makes a cycle.
+
+The rules of `utils-node`:
+
+- 🔒 It imports Node directly, never `utils-files`. The one exception is `nodeProcesses.ts`, a re-export.
+- 🔒 Export only what code outside it uses. When the last outside user goes, the export goes too.
 - 🔒 One helper per file, named after it: `<name>.ts` exports exactly `<name>`.
-- 🔒 Plain Node functions are re-exported from one file per Node module, in its owner, with no single-function re-export files: `fs.ts`, `fsPromises.ts`, `path.ts`, `childProcess.ts`, …
-- 🔒 `index.ts` re-exports every file. Import from `proton/utils-files` or `proton/utils-node`.
-- 🔒 All types and interfaces live in `types.ts`. Node's own types (`Dirent`, `IncomingMessage`, …) are re-exported from there too.
-- 🔒 Every helper has a unit test, `<name>.test.ts`. `index.test.ts` proves every module file re-exports Node's own functions from a module its owner owns, and fails when a file breaks the rules above.
+- 🔒 Plain Node functions are re-exported from one file per Node module, with no single-function re-export files: `childProcess.ts`, `os.ts`, `http.ts`, …
+- 🔒 `index.ts` re-exports every file. Import from `proton/utils-node`.
+- 🔒 All types and interfaces live in `types.ts`. Node's own types (`IncomingMessage`, `ServerResponse`, …) are re-exported from there too.
+- 🔒 Every helper has a unit test, `<name>.test.ts` (the test of `nodeProcesses` sits with its code, in arrmatura-fs). `index.test.ts` proves every module file re-exports Node's own functions from a module `utils-node` owns (any but `node:fs`, `node:fs/promises`, `node:path`), and fails when a file breaks the rules above.
 - 🔒 Relative imports end in `.ts` and type imports use `import type`, so plain Node (`.ts` scripts, `.mjs`) runs them with no build step.
-- Missing Node function → add its name to that module's file in the owner. Missing helper → add `<name>.ts`, its test, and its line in `index.ts`.
+- Missing Node function → add its name to that module's file. Missing helper → add `<name>.ts`, its test, and its line in `index.ts`.
 
 ## ops
 
@@ -84,4 +88,4 @@ Shared base configs. Extend them by relative path, e.g. `"extends": "../proton/c
 npm install
 ```
 
-Installs `esbuild`, `@tailwindcss/cli`, `google-auth-library` and the test tooling, and links `../arrmatura` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.
+Installs `esbuild`, `@tailwindcss/cli`, `google-auth-library` and the test tooling, and links `../arrmatura`, `../arrmatura-fs` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.
