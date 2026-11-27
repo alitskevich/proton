@@ -2,7 +2,7 @@
 // Writes a content repo's www/sitemap.xml: one <url> per page the book site shows. Run in the
 // content repo, as its `npm run build:sitemap`:
 //
-//   bun ../proton/ops/sitemap.ts <siteUrl> [dir]
+//   proton sitemap <siteUrl> [dir]
 //
 // It reads the same files `index-docs.ts` writes to www/index.json (default `dir` = `docs`). A
 // page's url is its path under `dir`, as arrmatura-books routes it: `dir/a/b.md` -> `/a/b.md`,
@@ -35,7 +35,7 @@ const escapeXml = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt
 
 function main() {
   const [siteUrl, dir = "docs"] = process.argv.slice(2);
-  if (!siteUrl) throw new Error("Usage: bun ../proton/ops/sitemap.ts <siteUrl> [dir]");
+  if (!siteUrl) throw new Error("Usage: proton sitemap <siteUrl> [dir]");
   const base = siteUrl.replace(/\/+$/, "");
   const dates = lastCommitDates(dir);
 

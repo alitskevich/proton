@@ -7,7 +7,7 @@
  *   Run `gcloud auth application-default login` (Bombarbia: `npm run gcloud:login`) before using.
  *
  * Usage:
- *   bun ../proton/ops/download-sheets.ts <spreadsheetId> [outputFile]
+ *   proton download-sheets <spreadsheetId> [outputFile]
  *
  * No npm script wraps it: the app reads no sheet-synced JSON any more, so a dump is a manual
  * step whose destination you name — a scratch file to diff against, not a file the app loads.

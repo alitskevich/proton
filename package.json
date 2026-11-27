@@ -15,10 +15,10 @@
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./bundler ./ops/serve.ts ./ops/serve.test.ts ./meta ./ops/generate-meta.ts",
-    "lint:fix": "biome check --write ./bundler ./ops/serve.ts ./ops/serve.test.ts ./meta ./ops/generate-meta.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "release": "./ops/release.sh",
-    "test": "bun test bundler ops/serve.test.ts meta",
+    "test": "bun test",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"

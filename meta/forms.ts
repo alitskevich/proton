@@ -5,7 +5,7 @@ import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
  * One `<name>.json` form. `$`-keys of a field are notes for the generated source, not data:
  * `$comment` becomes `//` lines above the field, `$off: true` writes the field commented out.
  * `extends: "<name>"` puts that form's fields first, only the `pick`ed ones when given, none `required` when `partial`;
- * `loose`/`strict` (unknown keys kept/rejected) are a Zod matter, read by `generate-structs`.
+ * `loose`/`strict` (unknown keys kept/rejected) are a Zod matter, read by `generate-meta`.
  */
 type FormSource = {
   description?: string;

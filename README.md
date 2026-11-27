@@ -34,22 +34,23 @@ proton holds no door to Node since 2026-11-27. Two doors of [arrmatura-host](../
 
 Shared scripts for the sibling projects in `~/Projects`. An npm script calls one by name, as `proton <name> [args]` (`"build:css": "proton build-css --minify"`), from a project root and a workspace package alike. Every script works on the current directory.
 
-`proton` is the `bin` of this package (`bin/index.ts`): it runs `ops/<name>.ts` under Bun, or `ops/<name>.sh`, and passes signals and the exit code through. npm puts it in `node_modules/.bin` from the `file:` dependency, before `postinstall` runs, so an app's `postinstall` can be `proton link-modules`: that links the library checkouts the project lists in its `dependencies`/`devDependencies`.
+`proton` is the `bin` of this package (`bin/index.ts`): it runs `ops/<name>.ts` under Bun, or `ops/<name>.sh`, and passes signals and the exit code through. npm puts it in `node_modules/.bin` from the `file:` dependency, before `postinstall` runs, so an app's `postinstall` can be `proton link-modules`: that links the library checkouts the project lists in its `dependencies`/`devDependencies`/`peerDependencies`.
 
 | Script | Purpose |
 | --- | --- |
-| `link-modules.sh` | Symlink the libraries of `~/Projects/libs` named in the project's `dependencies`/`devDependencies` into `./node_modules` (`postinstall`). Runs `clone-modules.sh` first. |
+| `link-modules.sh` | Symlink the libraries of `~/Projects/libs` named in the project's `dependencies`/`devDependencies`/`peerDependencies` into `./node_modules` (`postinstall`). Runs `clone-modules.sh` first. |
 | `clone-modules.sh` | Clone the libraries missing from `~/Projects/libs` (hardcoded list of repos). |
-| `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json`. |
+| `build.ts [--watch]` | esbuild bundle; options come from the `esbuild` block of `./package.json` (`servedir` left out). |
 | `build-css.ts [input] [output] [--watch] [--minify]` | Tailwind CSS build (defaults: `index.css`, `www/dist/index.css`); `-` flags pass through to the Tailwind CLI, which is proton's own dependency. |
-| `serve.ts [--hot]` | esbuild dev server with watch; `--hot` serves the hot reload stream at `/__hot` ([`arrmatura-web/hot`](../arrmatura-web/modules/hot/README.md)); `PORT`, `HOST`, `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
-| `reindex.ts <dirs> <indexFile> [--filter=<glob>]` | Generate a CML index module from `.xml` components. |
+| `serve.ts [--hot]` | esbuild dev server with watch, options from the same `esbuild` block; `--hot` serves the hot reload stream at `/__hot` ([`arrmatura-web/hot`](../arrmatura-web/modules/hot/README.md)); `PORT`, `HOST`, `WWW` (servedir when the block names none, default `./www`), `FALLBACK`, `PROXY_PORT` (live-reload proxy), `PROXY` + `PROXY_PATHS` (send those paths to an app back end, live reload on). |
+| `reindex.ts <dirs> <indexFile> [--filter=<glob>] [--watch]` | Generate a CML index module from `.xml` components; `--watch` reindexes when an `.xml` is added, removed or renamed. |
 | `index-modules.ts [<dir,dir>]` | Generate `registry.ts` per module (default: `.`). |
 | `generate-catalog.ts [<dir,dir>] [outFile] [--extended]` | Generate `catalog.json` from `<Component>` signatures (defaults: `cml`, `catalog.json`); `--extended` adds each one's `<Prop>`s and `<State>`s as `properties`, told apart by `kind`. |
 | `check-fresh.ts <npm script> <file or glob>…` | Fail when running the npm script changes any of the files: the generated files were stale. The result stays in place, to be committed. |
 | `generate-meta.ts <outDir> [--meta=<dir>] [--no-zod] [--overlay=<lang>] [--watch]` | Generate a project's model code from `.meta` (default) into `outDir`. See [the model](#the-model-meta). |
 | `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
-| `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
+| `sitemap.ts <siteUrl> [dir]` | Write `www/sitemap.xml` of a books site: one `<url>` per markdown page of the `index-docs` tree, `<lastmod>` its last commit date. |
+| `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle as `upsertBatch` actions of 500 rows (`TARGET_URL`, `TOKEN`); a failed batch stops the upload and exits 1. |
 | `download-sheets.ts <spreadsheetId> [outFile]` | Dump a Google Spreadsheet as `{ sheet: rows[] }` JSON (stdout, one file, or one per `{sheet}`); Application Default Credentials. |
 | `release.sh [patch\|minor\|major\|<version>]` | Release the current package as a GitHub dependency: from a clean `main` in step with `origin`, run `gates`, bump `version` (default `patch`), commit, tag `v<version>`, push both. proton's own `npm run release` runs it. |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |

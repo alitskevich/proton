@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, watch } from "node:fs";
 import { posix } from "node:path";
 import { mapDirectoryFiles, writeFileContent } from "arrmatura-host/files";
+import { messageOf } from "../bundler/messageOf";
 
 /** `../cml/Foo.xml` — a specifier relative to the generated file, always explicitly relative. */
 const importSpecifier = (indexFile: string, sourceFile: string) => {
@@ -128,7 +129,7 @@ export default [
 const MODULE_DIRS = ["cml", "src"];
 
 /** Name of the generated file, in every module of a kit-structured package. */
-export const REGISTRY_FILE = "registry.ts";
+const REGISTRY_FILE = "registry.ts";
 
 /**
  * Generates a module's `registry.ts`: one named re-export per component — every visual component
@@ -180,9 +181,9 @@ ${exports.map(([, line]) => line).join(";\n")};
   console.log(`Reindex module: ${moduleDir} -> ${indexFile} (${templates.length} cml, ${services.length} services)`);
 }
 
-// `bun ../proton/ops/reindex.ts <dirs> <indexFile> [--filter=<glob>] [--watch]`, source dirs comma-separated:
-//   bun ../proton/ops/reindex.ts "auth,cml,fields" ./index-cml.ts
-//   bun ../proton/ops/reindex.ts "atomic/cml,cml" ./src/index-cml.ts --filter=*.demo.xml
+// `proton reindex <dirs> <indexFile> [--filter=<glob>] [--watch]`, source dirs comma-separated:
+//   proton reindex "auth,cml,fields" ./index-cml.ts
+//   proton reindex "atomic/cml,cml" ./src/index-cml.ts --filter=*.demo.xml
 // Guarded so the generators can also be imported — `index-modules.ts` calls `indexModule` once per
 // module of a kit-structured package.
 if (import.meta.main) {
@@ -205,8 +206,8 @@ if (import.meta.main) {
         if (event !== "rename" || !file?.endsWith(".xml")) return;
         try {
           indexCml({ sourceDirs, indexFile, filter });
-        } catch (err: any) {
-          console.error("❌ Error:", err.message || err);
+        } catch (error) {
+          console.error("❌ Error:", messageOf(error) ?? error);
         }
       });
     }

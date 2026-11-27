@@ -24,7 +24,6 @@ export function getEsbuildOptions({
     // An `.xml` import is its pre-parsed component list.
     plugins: [...plugins, cmlPlugin],
     loader: {
-      ".xml": "text",
       ".md": "text",
       ".png": "file",
       ".svg": "file",

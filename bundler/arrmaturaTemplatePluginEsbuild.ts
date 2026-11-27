@@ -37,6 +37,3 @@ export const cmlPlugin: Plugin = {
     });
   },
 };
-
-/** Kept beside the named export: emono and arrmatura-books import the plugin as the default. */
-export default cmlPlugin;

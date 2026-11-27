@@ -13,13 +13,13 @@ describe("getEsbuildOptions", () => {
       sourcemap: "external",
       minify: true,
       plugins: [cmlPlugin],
-      loader: { ".xml": "text", ".md": "text", ".png": "file", ".svg": "file" },
+      loader: { ".md": "text", ".png": "file", ".svg": "file" },
     });
   });
 
   test("lets given options win, merging loaders", () => {
-    const options = getEsbuildOptions({ outdir: "dist", minify: false, loader: { ".xml": "file", ".txt": "text" } });
+    const options = getEsbuildOptions({ outdir: "dist", minify: false, loader: { ".md": "file", ".txt": "text" } });
     expect(options).toMatchObject({ outdir: "dist", minify: false });
-    expect(options.loader).toEqual({ ".xml": "file", ".md": "text", ".png": "file", ".svg": "file", ".txt": "text" });
+    expect(options.loader).toEqual({ ".md": "file", ".png": "file", ".svg": "file", ".txt": "text" });
   });
 });

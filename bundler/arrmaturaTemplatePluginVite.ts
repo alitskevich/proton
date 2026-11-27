@@ -21,7 +21,7 @@ export function arrmaturaTemplatePlugin() {
       }
       return {
         code,
-        map: null, // provide source map if available
+        map: null,
       };
     },
   };

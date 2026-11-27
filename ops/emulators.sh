@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: ../proton/ops/emulators.sh
+# Usage: proton emulators
 #
 # Starts the Firebase emulators of the project in the current directory, on the ports its own
 # firebase.json declares, so two projects with distinct port blocks can run side by side.

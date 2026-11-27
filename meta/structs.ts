@@ -126,7 +126,7 @@ const namesOf = (s: Spec) => [
  * `sourceDir`, `export const Z<Name>` and its `T<Name>`, ordered so every schema follows the ones it names. A struct is
  * `z.object({…})` (`z.looseObject`/`z.strictObject` when `loose`/`strict`), or `Z<Parent>.pick({…}).partial().extend({…})`
  * when it `extends`. A struct whose fields carry `Forma` display keys is a form: it throws, naming `.meta/forms`. `enum` specs import
- * `Z<TypeSpec>` from the enum module beside it (`generate-enums`), `refine` functions from their module. The importing
+ * `Z<TypeSpec>` from the enum module beside it (`generate-meta`), `refine` functions from their module. The importing
  * project provides `zod` and those modules.
  *
  * @param sourceDir The folder of `.json` structs (`{ fields }`), scanned flat.

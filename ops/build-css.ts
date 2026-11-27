@@ -1,7 +1,7 @@
 /// <reference types="node" />
 // Builds a project's Tailwind CSS. Run from the project root, as its `npm run build:css`:
 //
-//   bun node_modules/proton/ops/build-css.ts [input] [output] [--watch] [--minify]
+//   proton build-css [input] [output] [--watch] [--minify]
 //
 // `input` defaults to `index.css` and `output` to `www/dist/index.css`, both relative to the
 // current directory. Every `-`-prefixed argument passes through to the Tailwind CLI, so

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: ../proton/ops/bump-version.sh [path-to-version-file]
+# Usage: proton bump-version [path-to-version-file]
 #   defaults to ./www/version (relative to cwd, i.e. the app dir)
 #
 # Bumps the integer cache-busting version in a `version` file.

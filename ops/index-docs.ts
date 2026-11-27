@@ -2,7 +2,7 @@
 // Writes a content repo's site index, www/index.json, so the site reads its tree from its own
 // host instead of jsDelivr. Run in the content repo, as its `npm run build:index`:
 //
-//   bun ../proton/ops/index-docs.ts [dir] [--watch]
+//   proton index-docs [dir] [--watch]
 //
 // The index lists the files under `dir` (default `docs`) that git does not ignore, tracked or
 // not, in the shape of a jsDelivr `?structure=tree` listing, so arrmatura-books'

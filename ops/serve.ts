@@ -1,4 +1,4 @@
-// esbuild dev server with watch, run from an app's directory: `bun ../proton/ops/serve.ts`.
+// esbuild dev server with watch, run from an app's directory: `proton serve [--hot]`.
 //
 //   PORT, HOST     where the app is served (default localhost:8080)
 //   WWW            servedir when package.json names none (default ./www)
@@ -20,6 +20,8 @@ import { join, resolve } from "node:path";
 import { readFileJsonContent } from "arrmatura-host/files";
 import * as esbuild from "esbuild";
 import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
+import { messageOf } from "../bundler/messageOf";
+import { packageEsbuildOptions } from "../bundler/packageEsbuildOptions";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
@@ -144,29 +146,22 @@ type Upstreams = {
   hot?: (req: http.IncomingMessage, res: http.ServerResponse) => boolean;
 };
 
-export async function main(options: any = {}) {
+async function main() {
   try {
-    const { name, esbuild: packageOptions = {} } = (readFileJsonContent(`${process.cwd()}/package.json`) as any) ?? {
-      name: "client",
-      esbuild: {},
-    };
-    // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is
-    // this server's own and esbuild rejects it.
-    const { servedir: packageServedir, ...packageBuildOptions } = packageOptions;
-
+    // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is this server's own.
     const {
-      servedir = packageServedir ?? process.env.WWW ?? "./www",
-      fallback = process.env.FALLBACK ?? `${servedir}/index.html`,
-      port = parseInt(process.env.PORT ?? "8080", 10),
-      host = process.env.HOST ?? "localhost",
-      backend = process.env.PROXY,
-      backendPaths = process.env.PROXY_PATHS?.split(",").filter(Boolean) ?? [],
-      noWatch = false,
-      ...buildOptions
-    } = options;
+      name = "client",
+      servedir = process.env.WWW ?? "./www",
+      options,
+    } = packageEsbuildOptions(readFileJsonContent(`${process.cwd()}/package.json`));
+    const fallback = process.env.FALLBACK ?? `${servedir}/index.html`;
+    const port = parseInt(process.env.PORT ?? "8080", 10);
+    const host = process.env.HOST ?? "localhost";
+    const backend = process.env.PROXY;
+    const backendPaths = process.env.PROXY_PATHS?.split(",").filter(Boolean) ?? [];
 
     const hot = process.argv.includes("--hot");
-    const outdir = buildOptions.outdir ?? `${servedir}/dist`;
+    const outdir = options.outdir ?? `${servedir}/dist`;
     const proxyPort = process.env.PROXY_PORT ? Number(process.env.PROXY_PORT) : backend || hot ? port : undefined;
     // When the front server takes PORT, esbuild picks its own port on loopback.
     const bundlerOnLoopback = proxyPort === port;
@@ -175,18 +170,15 @@ export async function main(options: any = {}) {
 
     const ctx = await esbuild.context(
       getEsbuildOptions({
-        ...packageBuildOptions,
+        ...options,
         outdir,
         // Dev only: link the map so devtools pick it up. Production builds (build.ts) keep
         // the "external" default, which emits no sourceMappingURL reference.
         sourcemap: "linked",
-        ...buildOptions,
       }),
     );
 
-    if (!noWatch) {
-      await ctx.watch();
-    }
+    await ctx.watch();
 
     const serveOptions = {
       servedir,
@@ -223,11 +215,8 @@ export async function main(options: any = {}) {
     }
     console.log(`✅ Serving "${name}" app at ${addresses([host], proxyPort)} from ${servedir} (hot reload enabled)`);
     if (backend) console.log(`↪ ${backendPaths.join(" ")} → ${backend}`);
-  } catch (err: any) {
-    console.error("❌ Error:", err.message || err);
-    if (err.details) {
-      console.error(err.details);
-    }
+  } catch (error) {
+    console.error("❌ Error:", messageOf(error) ?? error);
     process.exit(1);
   }
 }
