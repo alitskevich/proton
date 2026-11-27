@@ -12,6 +12,7 @@ libs="$(dirname "$(cd "$(dirname "$0")/.." && pwd)")"
 repos="
 arrmatura/arrmatura
 arrmatura/arrmatura-books
+arrmatura/arrmatura-brain
 arrmatura/arrmatura-canvas
 arrmatura/arrmatura-host
 arrmatura/arrmatura-markdown
