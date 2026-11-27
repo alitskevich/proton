@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /// <reference types="node" />
 // `proton <script> [args]` runs `ops/<script>.ts` under Bun, or `ops/<script>.sh`, in the current
 // directory. A project's npm scripts then name the script instead of its path:
@@ -9,9 +10,9 @@
 // same way as its root. The script runs as its own process, not an import: some guard their
 // entry with `import.meta.main`.
 
+import { spawn } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
 
 const FORWARDED = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
 

@@ -11,8 +11,8 @@
 // file has none.
 
 import { execFileSync } from "node:child_process";
-import { listFiles } from "./index-docs";
 import { writeFileContent } from "../utils-files/index.ts";
+import { listFiles } from "./index-docs";
 
 const HIDDEN = new Set(["CLAUDE.md", "INDEX.md"]);
 

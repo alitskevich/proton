@@ -118,7 +118,7 @@ ${sources.map(({ key, xml }) => `import ${key} from "${xml}"`).join(";\n")};
 export default [
   ${sources.map(({ key }) => key).join(",\n  ")},
 ];
-`
+`,
   );
 
   console.log(`Reindex CML files: ${options.sourceDirs.join(", ")} -> ${options.indexFile} (${sources.length})`);
@@ -174,7 +174,7 @@ export function indexModule({ moduleDir }: { moduleDir: string }) {
 // standing in for it. Registered as \`Object.values(registry)\`; the \`index.ts\` beside it is
 // where anything hand-written belongs.
 ${exports.map(([, line]) => line).join(";\n")};
-`
+`,
   );
 
   console.log(`Reindex module: ${moduleDir} -> ${indexFile} (${templates.length} cml, ${services.length} services)`);

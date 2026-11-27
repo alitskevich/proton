@@ -2,8 +2,8 @@
 
 export type { IncomingMessage, ServerResponse } from "node:http";
 
-/** The types of `nodeProcesses`, owned by `arrmatura-fs/processes`. */
-export type { ProcessHandle, ProcessPort, SpawnSpec } from "arrmatura-fs/processes";
+/** The types of `Processes`, owned by `arrmatura-host/processes`. */
+export type { IProcess, SpawnSpec } from "arrmatura-host/processes";
 
 export type ProbePort = {
   isListening(port: number, timeoutMs: number): Promise<boolean>;

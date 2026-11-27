@@ -19,7 +19,7 @@ console.log(url, file);
 async function doUpstream(
   url,
   bundle: Record<string, any[]>,
-  { portion = 500, token = "", action = "upsertBatch" }: any = {}
+  { portion = 500, token = "", action = "upsertBatch" }: any = {},
 ) {
   for (const store in bundle) {
     const data = bundle[store];

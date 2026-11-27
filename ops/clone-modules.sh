@@ -13,7 +13,7 @@ repos="
 arrmatura/arrmatura
 arrmatura/arrmatura-books
 arrmatura/arrmatura-canvas
-arrmatura/arrmatura-fs
+arrmatura/arrmatura-host
 arrmatura/arrmatura-markdown
 arrmatura/arrmatura-vibe
 arrmatura/arrmatura-web

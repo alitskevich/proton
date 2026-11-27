@@ -15,8 +15,8 @@
 
 import http from "node:http";
 import * as esbuild from "esbuild";
-import { readFileJsonContent } from "../utils-files/index.ts";
 import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
+import { readFileJsonContent } from "../utils-files/index.ts";
 import { watchHot } from "./hot/watchHot.ts";
 
 const LIVERELOAD_PATH = "/__livereload";
@@ -60,7 +60,10 @@ type Upstreams = {
 
 export async function main(options: any = {}) {
   try {
-    const { name, esbuild: packageOptions = {} } = readFileJsonContent(`${process.cwd()}/package.json`) as any ?? { name: "client", esbuild: {} };
+    const { name, esbuild: packageOptions = {} } = (readFileJsonContent(`${process.cwd()}/package.json`) as any) ?? {
+      name: "client",
+      esbuild: {},
+    };
     // As in build.ts, the package.json `esbuild` block is the whole option set; `servedir` is
     // this server's own and esbuild rejects it.
     const { servedir: packageServedir, ...packageBuildOptions } = packageOptions;
