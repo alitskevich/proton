@@ -1,6 +1,6 @@
+import { readFileJsonContent } from "arrmatura-host/files";
 import * as esbuild from "esbuild";
 import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
-import { readFileJsonContent } from "../utils-files/index.ts";
 
 export async function main(options: any = {}) {
   try {

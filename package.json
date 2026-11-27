@@ -8,8 +8,6 @@
     "proton": "bin/index.ts"
   },
   "exports": {
-    "./utils-node": "./utils-node/index.ts",
-    "./utils-files": "./utils-files/index.ts",
     "./getEsbuildOptions": "./bundler/getEsbuildOptions.ts",
     "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
     "./vite": "./bundler/arrmaturaTemplatePluginVite.ts",
@@ -17,10 +15,10 @@
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./utils-node ./utils-files ./bundler ./ops/hot ./meta ./ops/generate-meta.ts",
-    "lint:fix": "biome check --write ./utils-node ./utils-files ./bundler ./ops/hot ./meta ./ops/generate-meta.ts",
+    "lint": "biome check ./bundler ./ops/serve.ts ./ops/serve.test.ts ./meta ./ops/generate-meta.ts",
+    "lint:fix": "biome check --write ./bundler ./ops/serve.ts ./ops/serve.test.ts ./meta ./ops/generate-meta.ts",
     "release": "./ops/release.sh",
-    "test": "bun test utils-node bundler ops/hot meta",
+    "test": "bun test bundler ops/serve.test.ts meta",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"

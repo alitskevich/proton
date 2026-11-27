@@ -1,5 +1,5 @@
+import { readFileJsonContent } from "arrmatura-host/files";
 import { assert } from "ultimus";
-import { readFileJsonContent } from "../utils-files/index.ts";
 
 const { TARGET_URL, TOKEN } = process.env;
 const [, , file, url = TARGET_URL, token = TOKEN] = process.argv;

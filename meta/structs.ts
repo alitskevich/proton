@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { posix } from "node:path";
-import { readJsonFiles, writeFileContent } from "../utils-files/index.ts";
+import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
 
 /**
  * A value's spec: a struct field (with `id`) or a custom primitive (with `id`, never `required`).

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
-import { createDistTracker, hotEvent } from "./tracker";
+import { createDistTracker, hotEvent } from "./serve.ts";
 
 const HOT_SETTLE_MS = 2_000;
 

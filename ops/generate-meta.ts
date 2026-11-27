@@ -1,6 +1,7 @@
+import { generateFromJsonFiles } from "arrmatura-host/files";
 import { generateMeta } from "../meta/generateMeta.ts";
-import { generateFromJsonFiles } from "../utils-files/index.ts";
-import { overlayLang } from "../utils-node/index.ts";
+
+const overlayLang = () => process.argv.find((a) => a.startsWith("--overlay="))?.slice("--overlay=".length) || undefined;
 
 // `proton generate-meta <outDir> [--meta=<dir>] [--no-zod] [--overlay=<lang>] [--watch]`:
 //   proton generate-meta shared/meta

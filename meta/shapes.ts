@@ -1,6 +1,6 @@
 import { posix } from "node:path";
+import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
 import { jsonSource } from "ultimus";
-import { readJsonFiles, writeFileContent } from "../utils-files/index.ts";
 
 /** One `<name>.json` vocabulary: its member rows, each `{ id, … }`; a `$comment` is written above it. */
 type ShapeSource = { $comment?: string; items: Record<string, unknown>[] };

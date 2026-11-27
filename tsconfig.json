@@ -5,5 +5,5 @@
     "types": ["bun"],
     "allowImportingTsExtensions": true
   },
-  "include": ["utils-node", "utils-files", "bundler", "ops/hot", "meta", "ops/generate-meta.ts"]
+  "include": ["bundler", "ops/serve.ts", "ops/serve.test.ts", "meta", "ops/generate-meta.ts"]
 }

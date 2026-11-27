@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import { readJsonFiles, writeFileContent } from "../utils-files/index.ts";
+import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
 
 /**
  * One `<name>.json` form. `$`-keys of a field are notes for the generated source, not data:

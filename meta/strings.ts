@@ -1,6 +1,6 @@
 import { posix } from "node:path";
+import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
 import { jsonSource } from "ultimus";
-import { readJsonFiles, writeFileContent } from "../utils-files/index.ts";
 
 /**
  * Generates a strings module: one `export const <name> = { … }` per `<name>.json` in `sourceDir`,

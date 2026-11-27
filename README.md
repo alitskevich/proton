@@ -17,8 +17,6 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 | Export | What |
 | --- | --- |
-| `proton/utils-files` | The file system: `node:fs`, `node:fs/promises`, `node:path` and the helpers on them (`nodeFiles`, `mapDirectoryFiles`, `readJsonFiles`, …). A re-export of [`arrmatura-host/files`](../arrmatura-host/README.md#the-files-door), which owns the code. See [the Node.js boundary](#nodejs-boundary). |
-| `proton/utils-node` | The rest of Node: processes (`runCommand`, …), network, http, crypto, os, url, readline, argv (`overlayLang`). Its `Processes` and the types of it are a re-export of [`arrmatura-host/processes`](../arrmatura-host/README.md#the-processes-door). See [the Node.js boundary](#nodejs-boundary). |
 | `proton/meta` | The types the code generated from `.meta` is checked against: `FormField`, one field of a form (`meta/types.ts`). See [the model](#the-model-meta). |
 | `proton/esbuild` | esbuild plugin: an `.xml` import becomes its pre-parsed component list (`bundler/`, beside `getEsbuildOptions`, the base options of `build` and `serve`). |
 | `proton/getEsbuildOptions` | The base options of `build` and `serve` (browser ESM bundle, with the `proton/esbuild` plugin), for a script that bundles by itself. |
@@ -28,21 +26,9 @@ Code a project imports rather than runs, addressed as `proton/<name>`. `proton` 
 
 ### Node.js boundary
 
-`utils-files` and `utils-node` are the only door to Node.js built-ins for a project that keeps them out of its own code (almaster lints for it).
+proton holds no door to Node since 2026-11-27. Two doors of [arrmatura-host](../arrmatura-host/README.md) own a part of it: [`arrmatura-host/files`](../arrmatura-host/README.md#the-files-door) the file system (`node:fs`, `node:fs/promises`, `node:path`), [`arrmatura-host/processes`](../arrmatura-host/README.md#the-processes-door) child processes (`node:child_process`). A project imports those modules only through the doors (almaster and alex lint for it); any other Node module (`node:os`, `node:url`, `node:http`, …) it imports directly. A helper only one project uses lives in that project.
 
-`utils-files` is one line: it re-exports `arrmatura-host/files`, the sibling library that owns the file system since 2026-11-25. Its code, tests and rules are [there](../arrmatura-host/README.md#the-files-door); a missing file-system function or helper is added there. In the same way `utils-node` re-exports `Processes` and the types `IProcess` and `SpawnSpec` from `arrmatura-host/processes`. Both entries import Node only and arrmatura-host imports nothing of proton, so neither re-export makes a cycle.
-
-The rules of `utils-node`:
-
-- 🔒 It imports Node directly, never `utils-files`. The one exception is `Processes.ts`, a re-export.
-- 🔒 Export only what code outside it uses. When the last outside user goes, the export goes too.
-- 🔒 One helper per file, named after it: `<name>.ts` exports exactly `<name>`.
-- 🔒 Plain Node functions are re-exported from one file per Node module, with no single-function re-export files: `childProcess.ts`, `os.ts`, `http.ts`, …
-- 🔒 `index.ts` re-exports every file. Import from `proton/utils-node`.
-- 🔒 All types and interfaces live in `types.ts`. Node's own types (`IncomingMessage`, `ServerResponse`, …) are re-exported from there too.
-- 🔒 Every helper has a unit test, `<name>.test.ts` (the test of `Processes` sits with its code, in arrmatura-host). `index.test.ts` proves every module file re-exports Node's own functions from a module `utils-node` owns (any but `node:fs`, `node:fs/promises`, `node:path`), and fails when a file breaks the rules above.
-- 🔒 Relative imports end in `.ts` and type imports use `import type`, so plain Node (`.ts` scripts, `.mjs`) runs them with no build step.
-- Missing Node function → add its name to that module's file. Missing helper → add `<name>.ts`, its test, and its line in `index.ts`.
+- An export moves to another door → grep every project's `biome.json` `noRestrictedImports` message and its CLAUDE.md boundary heading (and links to its anchor): they still name the old door, and nothing fails.
 
 ## ops
 
@@ -65,12 +51,11 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle in batches (`TARGET_URL`, `TOKEN`). |
 | `download-sheets.ts <spreadsheetId> [outFile]` | Dump a Google Spreadsheet as `{ sheet: rows[] }` JSON (stdout, one file, or one per `{sheet}`); Application Default Credentials. |
-| `google-login.ts <scope>…` | Sign in to Google once through the Desktop OAuth client `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (`~/.keys/.env`) and print `GOOGLE_OAUTH='{clientId, clientSecret, refreshToken}'` to append there (`utils-node/loginGoogle`). |
 | `release.sh [patch\|minor\|major\|<version>]` | Release the current package as a GitHub dependency: from a clean `main` in step with `origin`, run `gates`, bump `version` (default `patch`), commit, tag `v<version>`, push both. proton's own `npm run release` runs it. |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |
 
-The scripts share helpers from `utils-files`, `utils-node`, `bundler/`, `meta/` and `ultimus` (`jsonSource`); `ops/` holds scripts only.
+The scripts share helpers from `arrmatura-host/files`, `bundler/`, `meta/` and `ultimus` (`jsonSource`); `ops/` holds scripts only.
 
 ## The model (`.meta`)
 

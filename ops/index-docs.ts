@@ -11,7 +11,7 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, watch } from "node:fs";
-import { writeFileContent } from "../utils-files/index.ts";
+import { writeFileContent } from "arrmatura-host/files";
 
 /** One node of a jsDelivr `?structure=tree` listing: a directory carries its children. */
 interface TreeEntry {

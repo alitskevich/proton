@@ -13,11 +13,13 @@
 //                  files of the bundle's output folder to the pages connected to its `HOT_PATH`. A page is
 //                  relaunched in place, so this replaces the page reload of PROXY_PORT / PROXY.
 
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, watch } from "node:fs";
 import http from "node:http";
+import { join, resolve } from "node:path";
+import { readFileJsonContent } from "arrmatura-host/files";
 import * as esbuild from "esbuild";
 import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
-import { readFileJsonContent } from "../utils-files/index.ts";
-import { watchHot } from "./hot/watchHot.ts";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
@@ -47,6 +49,90 @@ function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerRes
     res.on("end", retry);
   });
   req.on("error", retry);
+}
+
+// Hot reload (--hot): `watchHot` watches the bundle's output folder and streams each batch of changed files.
+// The tracker is pure over `fingerprint` and `emit`: a burst of writes is reported once, `HOT_SETTLE_MS` after
+// the last of them, and only the files whose content changed; a source map is never reported.
+
+const HOT_SETTLE_MS = 2_000;
+
+type TrackerOptions = {
+  /** The content's fingerprint of a file in the folder, or `null` when there is no such file. */
+  fingerprint: (name: string) => string | null;
+  /** Receives each batch of changed file names, sorted. */
+  emit: (files: string[]) => void;
+};
+
+export function createDistTracker({ fingerprint, emit }: TrackerOptions) {
+  const known = new Map<string, string>();
+  const pending = new Set<string>();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  function flush() {
+    const changed = [...pending].filter((name) => {
+      const print = fingerprint(name);
+      if (print === null || known.get(name) === print) return false;
+      known.set(name, print);
+      return true;
+    });
+    pending.clear();
+    if (changed.length) emit(changed.sort());
+  }
+
+  return {
+    /** Records a file's current content, so a rewrite of the same content is not a change. */
+    seed(name: string) {
+      const print = fingerprint(name);
+      if (print !== null) known.set(name, print);
+    },
+
+    touch(name: string) {
+      if (name.endsWith(".map")) return;
+      pending.add(name);
+      clearTimeout(timer);
+      timer = setTimeout(flush, HOT_SETTLE_MS);
+    },
+  };
+}
+
+/** One batch as a server-sent event: its `data` is the JSON array of the changed file names. */
+export const hotEvent = (files: string[]) => `data: ${JSON.stringify(files)}\n\n`;
+
+/** The endpoint of the front server the page follows; `HotReloadService` names the same path. */
+const HOT_PATH = "/__hot";
+
+/**
+ * The hot reload endpoint: watches `folder` (the bundler's output) and streams each batch of changed files to every
+ * page connected to `HOT_PATH` of the front server. Returns the request handler: true when it took the request.
+ */
+function watchHot(folder: string) {
+  const dir = resolve(folder);
+  // The bundler may not have written its first build yet.
+  mkdirSync(dir, { recursive: true });
+
+  const clients = new Set<http.ServerResponse>();
+  const tracker = createDistTracker({
+    fingerprint: (name) => {
+      const file = join(dir, name);
+      return existsSync(file) ? createHash("sha1").update(readFileSync(file, "utf8")).digest("hex") : null;
+    },
+    emit: (files) => {
+      for (const client of clients) client.write(hotEvent(files));
+      console.log(`hot: ${files.join(", ")} → ${clients.size} page(s)`);
+    },
+  });
+  for (const name of readdirSync(dir)) tracker.seed(name);
+  watch(dir, (_event, name) => name && tracker.touch(name));
+
+  return (req: http.IncomingMessage, res: http.ServerResponse) => {
+    if (req.method !== "GET" || new URL(req.url ?? "/", "http://localhost").pathname !== HOT_PATH) return false;
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+    res.write(": connected\n\n");
+    clients.add(res);
+    req.on("close", () => clients.delete(res));
+    return true;
+  };
 }
 
 /** Where the front server sends requests: esbuild, and optionally a back end for some paths. */
@@ -146,7 +232,7 @@ export async function main(options: any = {}) {
   }
 }
 
-main();
+if (import.meta.main) main();
 
 function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clients: Set<http.ServerResponse>) {
   const { bundler, backend, backendPaths, hot } = upstreams;
