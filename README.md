@@ -56,11 +56,11 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |
 
-The scripts share helpers from `arrmatura-host/files`, `bundler/`, `meta/` and `ultimus` (`jsonSource`); `ops/` holds scripts only.
+The scripts share helpers from `arrmatura-host/files`, `bundler/`, `meta/` and `ultimus` (`jsonSource`, `stringSplit`), and parse their flags with `parseArgs` of `node:util`, so an unknown flag fails; `ops/` holds scripts, their tests and `consts.ts`.
 
 ## The model (`.meta`)
 
-Every project keeps its model as data in `.meta/` and generates its code with one command, `proton generate-meta <outDir>`: an npm script `codegen:meta`, `start:meta` its `-- --watch`, and `check:fresh` (`proton check-fresh codegen:meta <outDir files>`) first in `gates`. The generators live in `meta/`, one per module; `meta/generateMeta.ts` runs those whose source exists.
+Every project keeps its model as data in `.meta/` and generates its code with one command, `proton generate-meta <outDir>`: an npm script `codegen:meta`, `start:meta` its `-- --watch`, and `check:fresh` (`proton check-fresh codegen:meta <outDir files>`) first in `gates`. The generators live in `meta/`, one per module, their shared helpers in `meta/impl/` (the header and write, comment lines, the `{ items }` check); `meta/generateMeta.ts` runs those whose source exists. A malformed source file throws, naming the file.
 
 | Source | Holds | Module in `outDir` | Read as |
 | --- | --- | --- | --- |
@@ -69,7 +69,7 @@ Every project keeps its model as data in `.meta/` and generates its code with on
 | `strings/<area>.json` | UI texts: an object, nested groups allowed, no arrays | `strings.ts`: `export const <area>` | `R.<area>.<key>` |
 | `structs/<name>.json`, `primitives.json`, `functions.json` | Data shapes: `{ description?, loose?, strict?, extends?, fields }`; custom primitives; the functions a `refine` names | with zod `structs.ts`: `Z<Name>` / `T<Name>`, dependencies first | Zod schemas, types |
 
-A struct field or primitive spec is a string by default; `type` is `boolean`/`number`/`int`/`date`/`isoDate`/`unknown`/`email`/`url`, `primitive`/`object`/`enum` + `typeSpec`, `union` + `typeSpec: "a|b"`, or one `const`; `isMulti` (`minItems`, `maxItems`), `isMap`, `nullable`, `min`/`max`/`exclusiveMin`/`exclusiveMax`/`pattern`/`message`, `protocol` (a `url`'s scheme), `required: true`, `default`, `fallback` (`.catch`), `hint` (`.describe`). `refine` is a `|` pipe: `trim`/`toLowerCase`/`toUpperCase` first, then primitive or struct ids (`.pipe`) and `functions.json` functions (`{ items: [{ id, from }] }`, `.transform`). A struct is `loose`/`strict`, or `extends` a parent (`pick`, `partial`). The full spec: `Spec` in `meta/structs.ts`.
+A struct field or primitive spec is a string by default; `type` is `boolean`/`number`/`int`/`date`/`isoDate`/`unknown`/`email`/`url`, `primitive`/`object`/`enum` + `typeSpec`, `union` + `typeSpec: "a|b"`, or one `const`; `isMulti` (`minItems`, `maxItems`), `isMap`, `nullable`, `min`/`max`/`exclusiveMin`/`exclusiveMax`/`pattern`/`message`, `protocol` (a `url`'s scheme), `required` (`true`; `false` is the default), `default`, `fallback` (`.catch`), `hint` (`.describe`). `refine` is a `|` pipe: `trim`/`toLowerCase`/`toUpperCase` first, then primitive or struct ids (`.pipe`) and `functions.json` functions (`{ items: [{ id, from }] }`, `.transform`). A struct is `loose`/`strict`, or `extends` a parent (`pick`, `partial`). The full spec: `Spec` in `meta/structs.ts`.
 
 | Flag | Does |
 | --- | --- |

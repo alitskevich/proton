@@ -1,4 +1,6 @@
-import { indexModule } from "./reindex";
+import { parseArgs } from "node:util";
+import { stringSplit } from "ultimus";
+import { indexModule } from "./reindex.ts";
 
 /**
  * Regenerates one `registry.ts` per module, cwd-relative.
@@ -6,10 +8,8 @@ import { indexModule } from "./reindex";
  *   proton index-modules                              a flat package: the root is the module
  *   proton index-modules modules/atomic,modules/form  a kit-structured package
  */
-const modules = (process.argv[2] ?? ".")
-  .split(",")
-  .map((m) => m.trim())
-  .filter(Boolean);
+const { positionals } = parseArgs({ allowPositionals: true });
+const modules = stringSplit(positionals[0] ?? ".");
 
 for (const moduleDir of modules) {
   indexModule({ moduleDir });

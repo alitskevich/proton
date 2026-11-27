@@ -1,21 +1,21 @@
 import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { parseArgs } from "node:util";
 import type { ComponentPropertyDefinition, ComponentSignature } from "arrmatura";
-import { type Scalar, type XmlNode, xmlParse } from "ultimus";
+import { type Scalar, stringSplit, type XmlNode, xmlParse } from "ultimus";
 
 const ROOT_DIR = path.resolve(".");
 // `generate-catalog.ts [sourceDirs] [outFile] [--extended]`, source dirs comma-separated and relative to cwd.
 // Defaults keep the single-kit call sites (`cd ./atomic && generate-catalog.ts`) working unchanged.
 // `--extended` adds each signature's `<Prop>`s and `<State>`s as `properties`, told apart by `kind`.
-const ARGS = process.argv.slice(2);
-const EXTENDED = ARGS.includes("--extended");
-const [DIRS_ARG, OUT_ARG] = ARGS.filter((a) => !a.startsWith("--"));
-const SOURCE_DIRS = (DIRS_ARG || "cml")
-  .split(",")
-  .map((d) => d.trim())
-  .filter(Boolean)
-  .map((d) => path.join(ROOT_DIR, d));
+const { values: flags, positionals } = parseArgs({
+  allowPositionals: true,
+  options: { extended: { type: "boolean" } },
+});
+const EXTENDED = flags.extended === true;
+const [DIRS_ARG, OUT_ARG] = positionals;
+const SOURCE_DIRS = stringSplit(DIRS_ARG || "cml").map((dir) => path.join(ROOT_DIR, dir));
 const OUTPUT_PATH = path.join(ROOT_DIR, OUT_ARG || "catalog.json");
 
 // `<Component>` may sit at the root or inside a wrapper (`<Components>`, `<components>`), so collect by
@@ -42,7 +42,7 @@ function propertyOf({ attrs }: XmlNode, kind: ComponentPropertyDefinition["kind"
       : {
           enum: String(values)
             .split(",")
-            .map((v) => v.trim()),
+            .map((value) => value.trim()),
         }),
     ...rest,
   };
@@ -53,11 +53,11 @@ function propertyOf({ attrs }: XmlNode, kind: ComponentPropertyDefinition["kind"
  * `<State>` wraps one `<Var>` per local variable.
  */
 const propertiesOf = (nodes: XmlNode[]) =>
-  nodes.flatMap((n) => {
-    if (n.tag === "Prop") return [propertyOf(n, "prop")];
-    if (n.tag !== "State") return [];
-    const states = n.attrs?.id ? [n] : (n.nodes ?? []).filter((v) => v.tag === "Var");
-    return states.map((v) => propertyOf(v, "state"));
+  nodes.flatMap((node) => {
+    if (node.tag === "Prop") return [propertyOf(node, "prop")];
+    if (node.tag !== "State") return [];
+    const states = node.attrs?.id ? [node] : (node.nodes ?? []).filter((child) => child.tag === "Var");
+    return states.map((state) => propertyOf(state, "state"));
   });
 
 /** Absolute paths of every catalogable `.xml` under one source dir, sorted for a stable diff. */
@@ -70,9 +70,9 @@ async function scan(dir: string) {
   // `_`-prefixed files (e.g. `_safelist.xml`) are internal, and `<Name>.demo.xml` gallery pages
   // sit beside the component they demo — neither is a catalogued component.
   return files
-    .filter((f) => f.endsWith(".xml") && !f.endsWith(".demo.xml") && !path.basename(f).startsWith("_"))
+    .filter((file) => file.endsWith(".xml") && !file.endsWith(".demo.xml") && !path.basename(file).startsWith("_"))
     .sort()
-    .map((f) => path.join(dir, f));
+    .map((file) => path.join(dir, file));
 }
 
 async function main() {
@@ -90,8 +90,8 @@ async function main() {
     let componentNodes: XmlNode[];
     try {
       componentNodes = collectComponents(xmlParse(await fs.readFile(filePath, "utf-8")));
-    } catch (e) {
-      console.error(`Failed to read or parse ${file}:`, e);
+    } catch (error) {
+      console.error(`Failed to read or parse ${file}:`, error);
       continue;
     }
     // A file yielding nothing is how the earlier wrapper-case and recursion bugs stayed invisible.
@@ -103,7 +103,7 @@ async function main() {
       const id = String(componentNode.attrs?.id);
       if (seen.has(id)) return;
       seen.add(id);
-      const signatureNode = componentNode.nodes?.find((n) => n.tag === "Signature");
+      const signatureNode = componentNode.nodes?.find((node) => node.tag === "Signature");
       const attrs = signatureNode?.attrs ?? {};
       if (signatureNode && !attrs.private) {
         const kind = attrs.kind === "component" || attrs.kind === "service" ? attrs.kind : undefined;
@@ -129,7 +129,7 @@ async function main() {
   console.log(`Generated catalog with ${catalog.length} components at ${OUTPUT_PATH}`);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

@@ -56,3 +56,6 @@ export type FormField = {
   placeholder?: string;
   example?: string;
 };
+
+/** A `{ items }` source: a vocabulary of `.meta/enums`, `primitives.json`, `functions.json`; a `$comment` is its note. */
+export type ItemsSource = { $comment?: string; items: Record<string, unknown>[] };

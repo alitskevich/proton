@@ -11,8 +11,9 @@
 // file has none.
 
 import { execFileSync } from "node:child_process";
+import { posix } from "node:path";
 import { writeFileContent } from "arrmatura-host/files";
-import { listFiles } from "./index-docs";
+import { listFiles } from "./index-docs.ts";
 
 const HIDDEN = new Set(["CLAUDE.md", "INDEX.md"]);
 
@@ -31,7 +32,13 @@ function lastCommitDates(dir: string): Map<string, string> {
   return dates;
 }
 
-const escapeXml = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+const escapeXml = (text: string) => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+/** The route of the page at `path` (as git lists it) under `dir`, however `dir` is spelled: `./docs`, `docs/`. */
+export const pageRoute = (dir: string, path: string) => {
+  const doc = posix.relative(dir, path);
+  return doc === "index.md" ? "" : doc;
+};
 
 function main() {
   const [siteUrl, dir = "docs"] = process.argv.slice(2);
@@ -43,9 +50,7 @@ function main() {
     .filter(isPage)
     .sort()
     .map((path) => {
-      const doc = path.slice(dir.length + 1);
-      const route = doc === "index.md" ? "" : doc;
-      const loc = `<loc>${escapeXml(`${base}/${encodeURI(route)}`)}</loc>`;
+      const loc = `<loc>${escapeXml(`${base}/${encodeURI(pageRoute(dir, path))}`)}</loc>`;
       const date = dates.get(path);
       return `  <url>${loc}${date ? `<lastmod>${date}</lastmod>` : ""}</url>`;
     });
@@ -62,4 +67,4 @@ function main() {
   console.log(`✅ Mapped ${urls.length} pages of ${dir}/ -> www/sitemap.xml`);
 }
 
-main();
+if (import.meta.main) main();

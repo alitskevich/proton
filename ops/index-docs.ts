@@ -14,11 +14,11 @@ import { existsSync, watch } from "node:fs";
 import { writeFileContent } from "arrmatura-host/files";
 
 /** One node of a jsDelivr `?structure=tree` listing: a directory carries its children. */
-interface TreeEntry {
+type TreeEntry = {
   type: "file" | "directory";
   name: string;
   files?: TreeEntry[];
-}
+};
 
 type Tree = Pick<TreeEntry, "files">;
 

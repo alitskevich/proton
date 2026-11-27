@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
+import { HOT_SETTLE_MS } from "./consts.ts";
 import { createDistTracker, hotEvent } from "./serve.ts";
-
-const HOT_SETTLE_MS = 2_000;
 
 describe("createDistTracker", () => {
   /** A dist folder held in memory: name → fingerprint; a missing name has no file. */
   function setup(initial: Record<string, string> = {}) {
     const files = new Map(Object.entries(initial));
     const batches: string[][] = [];
-    const tracker = createDistTracker({ fingerprint: (name) => files.get(name) ?? null, emit: (b) => batches.push(b) });
+    const tracker = createDistTracker({
+      fingerprint: (name) => files.get(name) ?? null,
+      emit: (batch) => batches.push(batch),
+    });
     const write = (name: string, content: string) => {
       files.set(name, content);
       tracker.touch(name);

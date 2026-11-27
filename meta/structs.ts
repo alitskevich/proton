@@ -1,6 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { posix } from "node:path";
-import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
+import { readJsonFiles } from "arrmatura-host/files";
+import { capitalize } from "ultimus";
+import { isRecord } from "../bundler/isRecord.ts";
+import { docLines } from "./impl/docLines.ts";
+import { itemsSource } from "./impl/itemsSource.ts";
+import { literalBody } from "./impl/literalBody.ts";
+import { writeGenerated } from "./impl/writeGenerated.ts";
 
 /**
  * A value's spec: a struct field (with `id`) or a custom primitive (with `id`, never `required`).
@@ -14,7 +20,8 @@ import { readJsonFiles, writeFileContent } from "arrmatura-host/files";
  * - `refine`: a `|` pipe, left to right. `trim`/`toLowerCase`/`toUpperCase` come first and normalise the text before
  *   its limits and format; then a primitive or struct id is `.pipe(Z<Id>)` (a further check), and a function of the
  *   functions file is `.transform((value) => fn(value))`, both on the whole value.
- * - `nullable`, `required: true` (a field), `default` (`.default`), `fallback` (`.catch`), `hint` (`.describe`).
+ * - `nullable`, `required` (a field's boolean: `true` required, `false` the default), `default` (`.default`),
+ *   `fallback` (`.catch`), `hint` (`.describe`).
  */
 type Spec = {
   id: string;
@@ -72,37 +79,49 @@ const INTRINSIC: Record<string, string> = {
 
 /** The string formats: their schema, given its argument (an error message, or a `url`'s options). */
 const FORMAT: Record<string, (arg: string) => string> = {
-  date: (a) => `z.iso.datetime(${a})`,
-  isoDate: (a) => `z.iso.date(${a})`,
-  email: (a) => `z.email(${a})`,
-  url: (a) => `z.url(${a})`,
+  date: (arg) => `z.iso.datetime(${arg})`,
+  isoDate: (arg) => `z.iso.date(${arg})`,
+  email: (arg) => `z.email(${arg})`,
+  url: (arg) => `z.url(${arg})`,
 };
 
 const NORMALIZERS = new Set(["trim", "toLowerCase", "toUpperCase"]);
 
 const NAMED = ["primitive", "object", "enum"];
 
-const pascal = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
-
-const doc = (text: string | undefined, indent = "") =>
-  text ? [`${indent}/**`, ...text.split("\n").map((l) => `${indent} * ${l}`), `${indent} */`] : [];
-
+/** A form's field (display keys, or a `required` predicate) cannot be a data shape's. */
 const isShape = ({ fields }: Struct) =>
-  fields.every((f) => !DISPLAY_KEYS.some((k) => k in f) && (f.required === undefined || f.required === true));
+  fields.every(
+    (field) => !DISPLAY_KEYS.some((key) => key in field) && ["undefined", "boolean"].includes(typeof field.required),
+  );
 
 const typed = (exported: string) => ["", `export type T${exported.slice(1)} = z.infer<typeof ${exported}>;`];
 
-/** The pattern as a regex literal body: a `/` outside a character class and not yet escaped gets its `\`. */
-const literalBody = (pattern: string) => {
-  let inClass = false;
-  return [...pattern]
-    .map((c, i) => {
-      const escaped = pattern[i - 1] === "\\";
-      if (!escaped && c === "[") inClass = true;
-      if (!escaped && c === "]") inClass = false;
-      return c === "/" && !escaped && !inClass ? "\\/" : c;
-    })
-    .join("");
+/** The `{ items }` of `file`, each with a string at every key of `keys`; none when the file does not exist. */
+const readItems = <T>(file: string, keys: string[]): T[] => {
+  if (!existsSync(file)) return [];
+  const text = readFileSync(posix.resolve(file), "utf8");
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${file}: ${message}`, { cause: error });
+  }
+  const { items } = itemsSource(file, data);
+  for (const item of items)
+    if (keys.some((key) => typeof item[key] !== "string"))
+      throw new Error(`${file}: every item needs ${keys.map((key) => `a string "${key}"`).join(" and ")}`);
+  return items as T[];
+};
+
+/** `data` of `<name>.json` narrowed to a struct: its `fields`, each with a string `id`. */
+const structOf = (name: string, data: unknown): Struct => {
+  if (!isRecord(data) || !Array.isArray(data.fields) || !data.fields.every(isRecord))
+    throw new Error(`${name}.json: expected { "fields": [...] }`);
+  if (data.fields.some((field) => typeof field.id !== "string"))
+    throw new Error(`${name}.json: every field needs a string "id"`);
+  return data as Struct;
 };
 
 const limitCalls = ({ min, max, exclusiveMin, exclusiveMax, pattern, message }: Spec) =>
@@ -115,10 +134,10 @@ const limitCalls = ({ min, max, exclusiveMin, exclusiveMax, pattern, message }: 
   ].join("");
 
 /** The ids a spec names: its type, its union members, its `refine` checks. */
-const namesOf = (s: Spec) => [
-  ...(s.type && NAMED.includes(s.type) && s.typeSpec ? [s.typeSpec] : []),
-  ...(s.type === "union" ? (s.typeSpec ?? "").split("|") : []),
-  ...(s.refine ?? "").split("|").filter((step) => step && !NORMALIZERS.has(step)),
+const namesOf = (spec: Spec) => [
+  ...(spec.type && NAMED.includes(spec.type) && spec.typeSpec ? [spec.typeSpec] : []),
+  ...(spec.type === "union" ? (spec.typeSpec ?? "").split("|") : []),
+  ...(spec.refine ?? "").split("|").filter((step) => step && !NORMALIZERS.has(step)),
 ];
 
 /**
@@ -127,7 +146,7 @@ const namesOf = (s: Spec) => [
  * `z.object({…})` (`z.looseObject`/`z.strictObject` when `loose`/`strict`), or `Z<Parent>.pick({…}).partial().extend({…})`
  * when it `extends`. A struct whose fields carry `Forma` display keys is a form: it throws, naming `.meta/forms`. `enum` specs import
  * `Z<TypeSpec>` from the enum module beside it (`generate-meta`), `refine` functions from their module. The importing
- * project provides `zod` and those modules.
+ * project provides `zod` and those modules. A malformed file throws, naming it.
  *
  * @param sourceDir The folder of `.json` structs (`{ fields }`), scanned flat.
  * @param primitivesFile The `{ items: Spec[] }` file of custom primitives; none when it does not exist.
@@ -145,13 +164,11 @@ export function generateStructs({
   functionsFile: string;
   outFile: string;
 }) {
-  const read = <T>(file: string) =>
-    existsSync(file) ? (JSON.parse(readFileSync(posix.resolve(file), "utf8")) as { items: T[] }).items : [];
-  const primitives = new Map(read<Spec>(primitivesFile).map((p) => [p.id, p]));
-  const functions = new Map(read<Fn>(functionsFile).map((f) => [f.id, f.from]));
-  const structs = new Map(readJsonFiles(sourceDir).map(([name, s]) => [name, s as Struct] as const));
-  for (const [name, s] of structs)
-    if (!isShape(s))
+  const primitives = new Map(readItems<Spec>(primitivesFile, ["id"]).map((primitive) => [primitive.id, primitive]));
+  const functions = new Map(readItems<Fn>(functionsFile, ["id", "from"]).map((fn) => [fn.id, fn.from]));
+  const structs = new Map(readJsonFiles(sourceDir).map(([name, data]) => [name, structOf(name, data)] as const));
+  for (const [name, struct] of structs)
+    if (!isShape(struct))
       throw new Error(`${name}.json: a form (Forma display keys or a non-boolean required): move it to .meta/forms`);
   for (const name of structs.keys())
     if (primitives.has(name)) throw new Error(`${name}: both a struct and a primitive`);
@@ -159,57 +176,60 @@ export function generateStructs({
   const used = new Set<string>();
 
   const unionPart = (where: string, part: string) => {
-    if (structs.has(part) || primitives.has(part)) return `Z${pascal(part)}`;
+    if (structs.has(part) || primitives.has(part)) return `Z${capitalize(part)}`;
     const intrinsic = INTRINSIC[part] ?? FORMAT[part]?.("");
     if (!intrinsic) throw new Error(`${where}: union of unknown "${part}"`);
     return intrinsic;
   };
 
   /** The one value, normalised and limited, before list, map and `refine` checks. */
-  const oneExpr = (where: string, s: Spec, normalize: string) => {
-    if (s.const !== undefined) return `z.literal(${JSON.stringify(s.const)})`;
-    const spec = s.typeSpec ?? "";
-    const format = s.type === undefined ? undefined : FORMAT[s.type];
+  const oneExpr = (where: string, spec: Spec, normalize: string) => {
+    if (spec.const !== undefined) return `z.literal(${JSON.stringify(spec.const)})`;
+    const typeSpec = spec.typeSpec ?? "";
+    const format = spec.type === undefined ? undefined : FORMAT[spec.type];
     if (format) {
-      if (s.protocol !== undefined && s.type !== "url") throw new Error(`${where}: protocol on a non-url`);
-      const message = s.message && s.pattern === undefined ? JSON.stringify(s.message) : "";
-      const fmt = format(
-        s.protocol === undefined
+      if (spec.protocol !== undefined && spec.type !== "url") throw new Error(`${where}: protocol on a non-url`);
+      const message = spec.message && spec.pattern === undefined ? JSON.stringify(spec.message) : "";
+      const formatExpr = format(
+        spec.protocol === undefined
           ? message
-          : `{ protocol: /${literalBody(s.protocol)}/${message ? `, error: ${message}` : ""} }`,
+          : `{ protocol: /${literalBody(spec.protocol)}/${message ? `, error: ${message}` : ""} }`,
       );
-      return normalize ? `z.string()${normalize}${limitCalls(s)}.pipe(${fmt})` : `${fmt}${limitCalls(s)}`;
+      return normalize
+        ? `z.string()${normalize}${limitCalls(spec)}.pipe(${formatExpr})`
+        : `${formatExpr}${limitCalls(spec)}`;
     }
-    if (s.type === "union")
-      return `z.union([${spec
+    if (spec.type === "union")
+      return `z.union([${typeSpec
         .split("|")
-        .map((p) => unionPart(where, p))
+        .map((part) => unionPart(where, part))
         .join(", ")}])`;
-    const named = s.type !== undefined && NAMED.includes(s.type);
-    if (!named && s.type !== undefined && !INTRINSIC[s.type]) throw new Error(`${where}: unknown type "${s.type}"`);
-    if (named && !spec) throw new Error(`${where}: type "${s.type}" needs a typeSpec`);
-    if (s.type === "primitive" && !primitives.has(spec)) throw new Error(`${where}: no primitive "${spec}"`);
-    if (s.type === "object" && !structs.has(spec)) throw new Error(`${where}: no struct "${spec}"`);
-    if (s.type === "enum") enums.add(`Z${pascal(spec)}`);
-    return `${named ? `Z${pascal(spec)}` : INTRINSIC[s.type ?? "string"]}${normalize}${limitCalls(s)}`;
+    const named = spec.type !== undefined && NAMED.includes(spec.type);
+    if (!named && spec.type !== undefined && !INTRINSIC[spec.type])
+      throw new Error(`${where}: unknown type "${spec.type}"`);
+    if (named && !typeSpec) throw new Error(`${where}: type "${spec.type}" needs a typeSpec`);
+    if (spec.type === "primitive" && !primitives.has(typeSpec)) throw new Error(`${where}: no primitive "${typeSpec}"`);
+    if (spec.type === "object" && !structs.has(typeSpec)) throw new Error(`${where}: no struct "${typeSpec}"`);
+    if (spec.type === "enum") enums.add(`Z${capitalize(typeSpec)}`);
+    return `${named ? `Z${capitalize(typeSpec)}` : INTRINSIC[spec.type ?? "string"]}${normalize}${limitCalls(spec)}`;
   };
 
-  const specExpr = (where: string, s: Spec, field: boolean) => {
-    const steps = (s.refine ?? "").split("|").filter(Boolean);
+  const specExpr = (where: string, spec: Spec, field: boolean) => {
+    const steps = (spec.refine ?? "").split("|").filter(Boolean);
     const lead = steps.findIndex((step) => !NORMALIZERS.has(step));
     const normalizers = lead === -1 ? steps : steps.slice(0, lead);
     const rest = lead === -1 ? [] : steps.slice(lead);
     if (rest.some((step) => NORMALIZERS.has(step)))
-      throw new Error(`${where}: "${s.refine}": a normaliser after a check`);
-    const one = oneExpr(where, s, normalizers.map((n) => `.${n}()`).join(""));
-    const many = s.isMap
+      throw new Error(`${where}: "${spec.refine}": a normaliser after a check`);
+    const one = oneExpr(where, spec, normalizers.map((normalizer) => `.${normalizer}()`).join(""));
+    const many = spec.isMap
       ? `z.record(z.string(), ${one})`
-      : s.isMulti
-        ? `z.array(${one})${s.minItems === undefined ? "" : `.min(${s.minItems})`}${s.maxItems === undefined ? "" : `.max(${s.maxItems})`}`
+      : spec.isMulti
+        ? `z.array(${one})${spec.minItems === undefined ? "" : `.min(${spec.minItems})`}${spec.maxItems === undefined ? "" : `.max(${spec.maxItems})`}`
         : one;
     const refined = rest
       .map((step) => {
-        if (structs.has(step) || primitives.has(step)) return `.pipe(Z${pascal(step)})`;
+        if (structs.has(step) || primitives.has(step)) return `.pipe(Z${capitalize(step)})`;
         if (!functions.has(step))
           throw new Error(`${where}: refine step "${step}" is no struct, primitive or function`);
         used.add(step);
@@ -219,35 +239,38 @@ export function generateStructs({
     return [
       many,
       refined,
-      s.nullable ? ".nullable()" : "",
-      field && s.required !== true && s.default === undefined ? ".optional()" : "",
-      s.fallback === undefined ? "" : `.catch(${JSON.stringify(s.fallback)})`,
-      s.default === undefined ? "" : `.default(${JSON.stringify(s.default)})`,
-      s.hint ? `.describe(${JSON.stringify(s.hint)})` : "",
+      spec.nullable ? ".nullable()" : "",
+      field && spec.required !== true && spec.default === undefined ? ".optional()" : "",
+      spec.fallback === undefined ? "" : `.catch(${JSON.stringify(spec.fallback)})`,
+      spec.default === undefined ? "" : `.default(${JSON.stringify(spec.default)})`,
+      spec.hint ? `.describe(${JSON.stringify(spec.hint)})` : "",
     ].join("");
   };
 
-  const primitiveLines = (p: Spec) => [
-    ...doc(p.$comment),
-    `export const Z${pascal(p.id)} = ${specExpr(`primitive ${p.id}`, p, false)};`,
-    ...typed(`Z${pascal(p.id)}`),
+  const primitiveLines = (primitive: Spec) => [
+    ...docLines(primitive.$comment),
+    `export const Z${capitalize(primitive.id)} = ${specExpr(`primitive ${primitive.id}`, primitive, false)};`,
+    ...typed(`Z${capitalize(primitive.id)}`),
   ];
 
-  const structLines = (name: string, s: Struct) => {
-    if (s.extends && !structs.has(s.extends)) throw new Error(`${name}: extends no struct "${s.extends}"`);
-    const mode = s.loose ? "looseObject" : s.strict ? "strictObject" : "object";
-    const parent = s.extends
-      ? `Z${pascal(s.extends)}${s.pick ? `.pick({ ${s.pick.map((k) => `${k}: true`).join(", ")} })` : ""}${s.partial ? ".partial()" : ""}`
-      : "";
-    const head = s.extends ? `${parent}.extend` : `z.${mode}`;
-    const body = s.fields
-      .filter((f) => !f.$off)
-      .flatMap((f) => [...doc(f.$comment, "  "), `  ${f.id}: ${specExpr(`${name}.${f.id}`, f, true)},`]);
-    const tail = s.extends && s.loose ? ".loose()" : s.extends && s.strict ? ".strict()" : "";
+  const structLines = (name: string, struct: Struct) => {
+    if (struct.extends && !structs.has(struct.extends))
+      throw new Error(`${name}: extends no struct "${struct.extends}"`);
+    const mode = struct.loose ? "looseObject" : struct.strict ? "strictObject" : "object";
+    const pick = struct.pick ? `.pick({ ${struct.pick.map((key) => `${key}: true`).join(", ")} })` : "";
+    const parent = struct.extends ? `Z${capitalize(struct.extends)}${pick}${struct.partial ? ".partial()" : ""}` : "";
+    const head = struct.extends ? `${parent}.extend` : `z.${mode}`;
+    const body = struct.fields
+      .filter((field) => !field.$off)
+      .flatMap((field) => [
+        ...docLines(field.$comment, { indent: "  " }),
+        `  ${field.id}: ${specExpr(`${name}.${field.id}`, field, true)},`,
+      ]);
+    const tail = struct.extends && struct.loose ? ".loose()" : struct.extends && struct.strict ? ".strict()" : "";
     const open = body.length
-      ? [`export const Z${pascal(name)} = ${head}({`, ...body, `})${tail};`]
-      : [`export const Z${pascal(name)} = ${head}({})${tail};`];
-    return [...doc(s.description), ...open, ...typed(`Z${pascal(name)}`)];
+      ? [`export const Z${capitalize(name)} = ${head}({`, ...body, `})${tail};`]
+      : [`export const Z${capitalize(name)} = ${head}({})${tail};`];
+    return [...docLines(struct.description), ...open, ...typed(`Z${capitalize(name)}`)];
   };
 
   const blocks: string[][] = [];
@@ -270,17 +293,14 @@ export function generateStructs({
   const fnImports = Object.entries(Object.groupBy([...used].sort(), (fn) => functions.get(fn) ?? "")).map(
     ([from, fns]) => `import { ${(fns ?? []).join(", ")} } from "${from}";`,
   );
+  const imports = [...fnImports, `import { z } from "zod";`].sort().join("\n");
+  const enumImport = enums.size ? `import { ${[...enums].sort().join(", ")} } from "./schema.ts";\n` : "";
 
-  writeFileContent(
-    posix.resolve(outFile),
-    `// GENERATED by \`proton generate-meta\` from \`${sourceDir}/*.json\`, \`${primitivesFile}\` and \`${functionsFile}\` — do not edit.
-${[...fnImports, `import { z } from "zod";`].sort().join("\n")}
-${enums.size ? `import { ${[...enums].sort().join(", ")} } from "./schema.ts";\n` : ""}
-${blocks.map((lines) => lines.join("\n")).join("\n\n")}
-`,
-  );
-
-  console.log(
-    `Generate structs: ${sourceDir} + ${primitivesFile} -> ${outFile} (${primitives.size} + ${structs.size})`,
-  );
+  writeGenerated({
+    kind: "structs",
+    sources: [`${sourceDir}/*.json`, primitivesFile, functionsFile],
+    outFile,
+    body: `${imports}\n${enumImport}\n${blocks.map((lines) => lines.join("\n")).join("\n\n")}`,
+    count: `${primitives.size} + ${structs.size}`,
+  });
 }

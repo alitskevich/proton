@@ -19,9 +19,10 @@ import http from "node:http";
 import { join, resolve } from "node:path";
 import { readFileJsonContent } from "arrmatura-host/files";
 import * as esbuild from "esbuild";
-import { getEsbuildOptions } from "../bundler/getEsbuildOptions";
-import { messageOf } from "../bundler/messageOf";
-import { packageEsbuildOptions } from "../bundler/packageEsbuildOptions";
+import { getEsbuildOptions } from "../bundler/getEsbuildOptions.ts";
+import { messageOf } from "../bundler/messageOf.ts";
+import { packageEsbuildOptions } from "../bundler/packageEsbuildOptions.ts";
+import { HOT_SETTLE_MS } from "./consts.ts";
 
 const LIVERELOAD_PATH = "/__livereload";
 const INJECT_SCRIPT = `<script>new EventSource("${LIVERELOAD_PATH}").onmessage=()=>location.reload()</script>`;
@@ -31,6 +32,19 @@ const CORS_HEADERS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow
 // `serve`, every request rebuilds, so a reload sent on each build makes the reloaded page reload again, forever.
 const ESBUILD_EVENTS_PATH = "/esbuild";
 const RECONNECT_MS = 500;
+
+/** Answers `req` with an open server-sent event stream and keeps `res` in `clients` until the page goes. */
+function openEventStream(req: http.IncomingMessage, res: http.ServerResponse, clients: Set<http.ServerResponse>) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+  });
+  res.write(": connected\n\n");
+  clients.add(res);
+  req.on("close", () => clients.delete(res));
+}
 
 /** Relay esbuild's `change` events to the live-reload clients, reconnecting when the stream drops. */
 function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerResponse>) {
@@ -46,7 +60,7 @@ function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerRes
     res.on("data", (chunk: string) => {
       if (!chunk.includes("event: change")) return;
       for (const client of clients) client.write("data: reload\n\n");
-      if (clients.size > 0) console.log(`♻️  Hot reload sent to ${clients.size} client(s)`);
+      if (clients.size > 0) console.log(`♻️  Live reload sent to ${clients.size} client(s)`);
     });
     res.on("end", retry);
   });
@@ -56,8 +70,6 @@ function relayChanges(bundler: Upstreams["bundler"], clients: Set<http.ServerRes
 // Hot reload (--hot): `watchHot` watches the bundle's output folder and streams each batch of changed files.
 // The tracker is pure over `fingerprint` and `emit`: a burst of writes is reported once, `HOT_SETTLE_MS` after
 // the last of them, and only the files whose content changed; a source map is never reported.
-
-const HOT_SETTLE_MS = 2_000;
 
 type TrackerOptions = {
   /** The content's fingerprint of a file in the folder, or `null` when there is no such file. */
@@ -129,10 +141,7 @@ function watchHot(folder: string) {
 
   return (req: http.IncomingMessage, res: http.ServerResponse) => {
     if (req.method !== "GET" || new URL(req.url ?? "/", "http://localhost").pathname !== HOT_PATH) return false;
-    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
-    res.write(": connected\n\n");
-    clients.add(res);
-    req.on("close", () => clients.delete(res));
+    openEventStream(req, res, clients);
     return true;
   };
 }
@@ -194,7 +203,7 @@ async function main() {
     const addresses = (hosts: string[], port: number) =>
       String(hosts)
         .split(",")
-        .map((h) => `http://${h}:${port}`)
+        .map((hostName) => `http://${hostName}:${port}`)
         .join(" ");
 
     if (proxyPort === undefined) {
@@ -213,7 +222,8 @@ async function main() {
     if (!bundlerOnLoopback) {
       console.log(`✅ Serving "${name}" app at ${addresses(serveHosts, servePort)} from ${servedir}`);
     }
-    console.log(`✅ Serving "${name}" app at ${addresses([host], proxyPort)} from ${servedir} (hot reload enabled)`);
+    const mode = hot ? "hot reload" : "live reload";
+    console.log(`✅ Serving "${name}" app at ${addresses([host], proxyPort)} from ${servedir} (${mode})`);
     if (backend) console.log(`↪ ${backendPaths.join(" ")} → ${backend}`);
   } catch (error) {
     console.error("❌ Error:", messageOf(error) ?? error);
@@ -233,15 +243,7 @@ function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clien
 
     // SSE endpoint for live reload
     if (!hot && url === LIVERELOAD_PATH) {
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "Access-Control-Allow-Origin": "*",
-      });
-      res.write(": connected\n\n");
-      clients.add(res);
-      req.on("close", () => clients.delete(res));
+      openEventStream(req, res, clients);
       return;
     }
 
@@ -279,13 +281,6 @@ function startProxy(host: string, proxyPort: number, upstreams: Upstreams, clien
 
     // Forward each incoming request to esbuild
     const proxyReq = http.request(options, (proxyRes) => {
-      // If esbuild returns "not found", send a custom 404 page
-      if (proxyRes.statusCode === 404) {
-        res.writeHead(404, { "Content-Type": "text/html" });
-        res.end("<h1>A custom 404 page</h1>");
-        return;
-      }
-
       const contentType = proxyRes.headers["content-type"] ?? "";
 
       // Inject live-reload script into HTML responses

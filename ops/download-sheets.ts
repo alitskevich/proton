@@ -22,6 +22,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import { stringFormat, stringify } from "ultimus";
+import { messageOf } from "../bundler/messageOf.ts";
 
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 
@@ -60,7 +61,7 @@ function parseSheetValues(values: string[][]): Row[] {
   if (!values || values.length < 2) return [];
 
   const [headerRow, ...dataRows] = values;
-  const headers = headerRow.map((h) => String(h ?? "").trim());
+  const headers = headerRow.map((header) => String(header ?? "").trim());
 
   return dataRows
     .map((row) => {
@@ -134,10 +135,12 @@ async function main() {
 
   // 1. Get spreadsheet metadata to list all sheet names
   const meta = await apiGet(`${SHEETS_API}/${spreadsheetId}?fields=sheets.properties`, client);
-  const allNames: string[] = meta.sheets.map((s: any) => s.properties.title).filter((s) => !s.startsWith("_"));
-  const sheetNames = allNames.filter((s) => !HAND_AUTHORED.has(s));
+  const allNames: string[] = meta.sheets
+    .map((sheet: any) => sheet.properties.title)
+    .filter((title: string) => !title.startsWith("_"));
+  const sheetNames = allNames.filter((title) => !HAND_AUTHORED.has(title));
   console.log(`Sheets found: ${allNames.join(", ")}`);
-  const skipped = allNames.filter((s) => HAND_AUTHORED.has(s));
+  const skipped = allNames.filter((title) => HAND_AUTHORED.has(title));
   if (skipped.length) console.log(`Skipped (hand-authored): ${skipped.join(", ")}`);
 
   // 2. Fetch each sheet's values in parallel
@@ -155,7 +158,7 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err.message);
+main().catch((error) => {
+  console.error(messageOf(error) ?? error);
   process.exit(1);
 });

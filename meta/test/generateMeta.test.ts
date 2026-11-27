@@ -58,4 +58,39 @@ describe("generateMeta", () => {
     put("structs/contacts.json", { fields: [{ id: "name", name: "Name" }] });
     expect(() => generateMeta({ metaDir: metaDir(), outDir: outDir() })).toThrow("move it to .meta/forms");
   });
+
+  it("writes a pattern's slash after an escaped backslash so the module parses", () => {
+    put("structs/path.json", { fields: [{ id: "path", pattern: "a\\\\/b" }] });
+    generateMeta({ metaDir: metaDir(), outDir: outDir() });
+    const structs = read("structs.ts");
+    expect(structs).toContain("path: z.string().regex(/a\\\\\\/b/).optional(),");
+    expect(() => new Bun.Transpiler({ loader: "ts" }).transformSync(structs)).not.toThrow();
+  });
+
+  it("takes required: false as an optional field", () => {
+    put("structs/note.json", { fields: [{ id: "text", required: false }] });
+    generateMeta({ metaDir: metaDir(), outDir: outDir() });
+    expect(read("structs.ts")).toContain("text: z.string().optional(),");
+  });
+
+  it("names a struct without fields", () => {
+    put("structs/empty.json", { description: "no fields" });
+    expect(() => generateMeta({ metaDir: metaDir(), outDir: outDir() })).toThrow(
+      'empty.json: expected { "fields": [...] }',
+    );
+  });
+
+  it("names a primitives file that is not { items }", () => {
+    put("primitives.json", [{ id: "code" }]);
+    expect(() => generateMeta({ metaDir: metaDir(), outDir: outDir() })).toThrow(
+      'primitives.json: expected { "items": [...] }',
+    );
+  });
+
+  it("names a functions file whose item has no module", () => {
+    put("functions.json", { items: [{ id: "slug" }] });
+    expect(() => generateMeta({ metaDir: metaDir(), outDir: outDir() })).toThrow(
+      'functions.json: every item needs a string "id" and a string "from"',
+    );
+  });
 });
