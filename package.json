@@ -12,14 +12,15 @@
     "./utils-files": "./utils-files/index.ts",
     "./getEsbuildOptions": "./bundler/getEsbuildOptions.ts",
     "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
-    "./vite": "./bundler/arrmaturaTemplatePluginVite.ts"
+    "./vite": "./bundler/arrmaturaTemplatePluginVite.ts",
+    "./meta": "./meta/index.ts"
   },
   "scripts": {
     "gates": "npx --yes npm-run-all --parallel typecheck lint test",
-    "lint": "biome check ./utils-node ./utils-files ./bundler ./ops/hot",
-    "lint:fix": "biome check --write ./utils-node ./utils-files ./bundler ./ops/hot",
+    "lint": "biome check ./utils-node ./utils-files ./bundler ./ops/hot ./meta ./ops/generate-meta.ts",
+    "lint:fix": "biome check --write ./utils-node ./utils-files ./bundler ./ops/hot ./meta ./ops/generate-meta.ts",
     "release": "./ops/release.sh",
-    "test": "bun test utils-node bundler ops/hot",
+    "test": "bun test utils-node bundler ops/hot meta",
     "typecheck": "tsc",
     "postinstall": "npm run link",
     "link": "./ops/link-modules.sh"
@@ -35,10 +36,10 @@
     "ultimus": "github:arrmatura/ultimus#semver:^2.3.9"
   },
   "peerDependencies": {
-    "arrmatura-fs": "github:arrmatura/arrmatura-fs#semver:^1.0.0"
+    "arrmatura-host": "github:arrmatura/arrmatura-host#semver:^1.0.0"
   },
   "peerDependenciesMeta": {
-    "arrmatura-fs": {
+    "arrmatura-host": {
       "optional": true
     }
   }

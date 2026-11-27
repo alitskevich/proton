@@ -2,15 +2,8 @@
   "extends": "./configs/tsconfig.json",
   "compilerOptions": {
     "noImplicitAny": false,
-    "types": [
-      "bun"
-    ],
+    "types": ["bun"],
     "allowImportingTsExtensions": true
   },
-  "include": [
-    "utils-node",
-    "utils-files",
-    "bundler",
-    "ops/hot"
-  ]
+  "include": ["utils-node", "utils-files", "bundler", "ops/hot", "meta", "ops/generate-meta.ts"]
 }
