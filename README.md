@@ -51,7 +51,6 @@ Shared scripts for the sibling projects in `~/Projects`. An npm script calls one
 | `index-docs.ts [dir] [--watch]` | Write `www/index.json`, the jsDelivr-shaped tree of the non-ignored files under `dir` (default `docs`) for a books site. |
 | `sitemap.ts <siteUrl> [dir]` | Write `www/sitemap.xml` of a books site: one `<url>` per markdown page of the `index-docs` tree, `<lastmod>` its last commit date. |
 | `upload.ts <file> [url] [token]` | POST a `{ store: rows[] }` JSON bundle as `upsertBatch` actions of 500 rows (`TARGET_URL`, `TOKEN`); a failed batch stops the upload and exits 1. |
-| `download-sheets.ts <spreadsheetId> [outFile]` | Dump a Google Spreadsheet as `{ sheet: rows[] }` JSON (stdout, one file, or one per `{sheet}`); Application Default Credentials. |
 | `release.sh [patch\|minor\|major\|<version>]` | Release the current package as a GitHub dependency: from a clean `main` in step with `origin`, run `gates`, bump `version` (default `patch`), commit, tag `v<version>`, push both. proton's own `npm run release` runs it. |
 | `bump-version.sh [file]` | Increment the cache-busting integer in `./www/version`. |
 | `emulators.sh` | Start the Firebase emulators on the ports of `./firebase.json`; `EMULATORS` (default functions,firestore,auth,storage), `EMULATOR_DATA` (keep data there between runs). |
@@ -94,4 +93,4 @@ Shared base configs. Extend them by relative path, e.g. `"extends": "../proton/c
 npm install
 ```
 
-Installs `esbuild`, `@tailwindcss/cli`, `google-auth-library` and the test tooling, and links `../arrmatura`, `../arrmatura-host` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.
+Installs `esbuild`, `@tailwindcss/cli` and the test tooling, and links `../arrmatura`, `../arrmatura-host` and `../ultimus`. The TS scripts resolve their imports from `proton/node_modules`, not from the calling project.
