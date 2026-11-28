@@ -5,5 +5,5 @@
     "types": ["bun"],
     "allowImportingTsExtensions": true
   },
-  "include": ["bin", "bundler", "meta", "ops"]
+  "include": ["bin", "meta", "ops"]
 }

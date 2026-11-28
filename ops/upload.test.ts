@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { writeFileContent } from "arrmatura-host/files";
 
 const SCRIPT = `${import.meta.dir}/upload.ts`;
-const BUNDLE_FILE = `${tmpdir()}/proton-upload-${process.pid}.json`;
+const BUNDLE_FILE = `${tmpdir()}/arrmatura-support-upload-${process.pid}.json`;
 writeFileContent(BUNDLE_FILE, JSON.stringify({ rows: [{ id: 1 }, { id: 2 }] }));
 
 /** A back end that answers every batch with `reply`, and the batches it got. */
@@ -19,7 +19,7 @@ function backend(reply: () => Response) {
   return { url: `http://localhost:${server.port}`, batches, stop: () => server.stop(true) };
 }
 
-/** Runs the script as `proton upload` does, against `url`. */
+/** Runs the script as `arrmatura-support upload` does, against `url`. */
 async function upload(url: string) {
   const child = Bun.spawn([process.execPath, SCRIPT, BUNDLE_FILE, url, "token"], { stdout: "pipe", stderr: "pipe" });
   const [code, stdout, stderr] = await Promise.all([

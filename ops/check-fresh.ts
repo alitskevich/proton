@@ -1,9 +1,9 @@
 /// <reference types="node" />
-// `proton check-fresh <npm script> <file or glob>…` fails when running the script changes any of
+// `arrmatura-support check-fresh <npm script> <file or glob>…` fails when running the script changes any of
 // the files: the generated files in the tree were stale. A gate runs it first, so a stale index or
 // catalog is reported instead of committed:
 //
-//   "check:fresh": "proton check-fresh codegen catalog.json 'modules/*/registry.ts'"
+//   "check:fresh": "arrmatura-support check-fresh codegen catalog.json 'modules/*/registry.ts'"
 //
 // The script's own result is left in place, so the fix is to commit it.
 
@@ -14,7 +14,7 @@ import { globSync, readFileSync } from "node:fs";
 const [script, ...patterns] = process.argv.slice(2);
 
 if (!script || !patterns.length) {
-  console.error("Usage: proton check-fresh <npm script> <file or glob>…");
+  console.error("Usage: arrmatura-support check-fresh <npm script> <file or glob>…");
   process.exit(1);
 }
 

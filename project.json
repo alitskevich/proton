@@ -1,9 +1,9 @@
 {
-  "id": "proton",
-  "name": "proton",
+  "id": "arrmatura-support",
+  "name": "arrmatura-support",
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "status": "maintain",
   "domain": "dev",
   "symbol": "⚛️",
-  "repoUrl": "https://github.com/alitskevich/proton"
+  "repoUrl": "https://github.com/arrmatura/arrmatura-support"
 }

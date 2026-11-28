@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: proton release [patch|minor|major|<version>]   (default: patch)
+# Usage: arrmatura-support release [patch|minor|major|<version>]   (default: patch)
 #
 # Releases the package in the current directory as a GitHub dependency: runs its
 # `gates`, bumps `version` in package.json, commits, tags `v<version>` and pushes

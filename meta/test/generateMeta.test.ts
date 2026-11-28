@@ -32,7 +32,7 @@ describe("generateMeta", () => {
   it("writes one module per source, the Zod ones too", () => {
     generateMeta({ metaDir: metaDir(), outDir: outDir() });
     expect(readdirSync(outDir()).sort()).toEqual(["forms.ts", "schema.ts", "shapes.ts", "strings.ts", "structs.ts"]);
-    expect(read("forms.ts")).toContain('import type { FormField } from "proton/meta";');
+    expect(read("forms.ts")).toContain('import type { FormField } from "arrmatura-support/meta";');
     expect(read("schema.ts")).toContain('export const ZGender = z.enum(["male"]);');
     expect(read("structs.ts")).toContain("gender: ZGender,");
   });

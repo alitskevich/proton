@@ -1,2 +1,2 @@
-/** `proton/meta`: the types the code generated from `.meta` (`proton generate-meta`) is checked against. */
+/** `arrmatura-support/meta`: the types the code generated from `.meta` (`arrmatura-support generate-meta`) is checked against. */
 export type { FormField } from "./types.ts";

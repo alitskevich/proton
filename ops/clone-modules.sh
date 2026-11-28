@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Usage: proton clone-modules
+# Usage: arrmatura-support clone-modules
 #
-# Clones the library checkouts missing from the libs folder (the one holding proton, ~/Projects/libs).
+# Clones the library checkouts missing from the libs folder (the one holding arrmatura-support, ~/Projects/libs).
 # The list is hardcoded: add a line when a new library appears. Existing checkouts are left untouched.
 
 set -eu
@@ -20,7 +20,7 @@ arrmatura/arrmatura-vibe
 arrmatura/arrmatura-web
 arrmatura/ultimus
 alitskevich/firebasis
-alitskevich/proton
+arrmatura/arrmatura-support
 "
 
 for repo in $repos; do

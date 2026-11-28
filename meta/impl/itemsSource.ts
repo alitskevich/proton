@@ -1,4 +1,4 @@
-import { isRecord } from "../../bundler/isRecord.ts";
+import { isRecord } from "ultimus";
 import type { ItemsSource } from "../types.ts";
 
 /** `data` read from `file` narrowed to `{ $comment?, items: [{…}, …] }`; anything else throws, naming the file. */

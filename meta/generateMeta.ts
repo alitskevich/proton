@@ -12,7 +12,7 @@ import { generateStructs } from "./structs.ts";
  * | Source | Module |
  * | --- | --- |
  * | `enums/` | `shapes.ts` (`<name>Shape` rows), and with `zod` `schema.ts` (`Z<Name>` / `T<Name>`) |
- * | `forms/` | `forms.ts` (`forms.<name>`, typed by `FormField` of `proton/meta`) |
+ * | `forms/` | `forms.ts` (`forms.<name>`, typed by `FormField` of `arrmatura-support/meta`) |
  * | `strings/` | `strings.ts` (one `export const <area>` per file) |
  * | `structs/`, `primitives.json`, `functions.json` | with `zod`, `structs.ts` (`Z<Name>` / `T<Name>`) |
  *

@@ -1,7 +1,5 @@
 import { readFileJsonContent } from "arrmatura-host/files";
-import { assert } from "ultimus";
-import { isRecord } from "../bundler/isRecord.ts";
-import { messageOf } from "../bundler/messageOf.ts";
+import { assert, isRecord, messageOf } from "ultimus";
 
 const BATCH_SIZE = 500;
 

@@ -1,6 +1,5 @@
 import { readJsonFiles } from "arrmatura-host/files";
-import { jsonSource } from "ultimus";
-import { isRecord } from "../bundler/isRecord.ts";
+import { isRecord, jsonSource } from "ultimus";
 import { writeGenerated } from "./impl/writeGenerated.ts";
 
 /**

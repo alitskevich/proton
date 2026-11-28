@@ -1,20 +1,18 @@
 {
-  "name": "proton",
+  "name": "arrmatura-support",
   "version": "1.0.3",
   "private": true,
   "description": "Infrastructure utilities shared by the sibling projects in ~/Projects",
   "type": "module",
   "bin": {
-    "proton": "bin/index.ts"
+    "arrmatura-support": "bin/index.ts"
   },
   "exports": {
-    "./getEsbuildOptions": "./bundler/getEsbuildOptions.ts",
-    "./esbuild": "./bundler/arrmaturaTemplatePluginEsbuild.ts",
-    "./vite": "./bundler/arrmaturaTemplatePluginVite.ts",
     "./meta": "./meta/index.ts"
   },
   "scripts": {
-    "gates": "npx --yes npm-run-all --parallel typecheck lint test",
+    "check:deps": "bun bin/index.ts check-deps",
+    "gates": "npx --yes npm-run-all --parallel check:deps typecheck lint test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "release": "./ops/release.sh",
@@ -24,9 +22,7 @@
     "link": "./ops/link-modules.sh"
   },
   "dependencies": {
-    "@tailwindcss/cli": "^4.3.5",
-    "@types/bun": "^1.4.4",
-    "esbuild": "^0.28.2"
+    "@types/bun": "^1.4.4"
   },
   "devDependencies": {
     "arrmatura": "github:arrmatura/arrmatura#semver:^7.0.1",

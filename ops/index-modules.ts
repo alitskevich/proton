@@ -5,8 +5,8 @@ import { indexModule } from "./reindex.ts";
 /**
  * Regenerates one `registry.ts` per module, cwd-relative.
  *
- *   proton index-modules                              a flat package: the root is the module
- *   proton index-modules modules/atomic,modules/form  a kit-structured package
+ *   arrmatura-support index-modules                              a flat package: the root is the module
+ *   arrmatura-support index-modules modules/atomic,modules/form  a kit-structured package
  */
 const { positionals } = parseArgs({ allowPositionals: true });
 const modules = stringSplit(positionals[0] ?? ".");

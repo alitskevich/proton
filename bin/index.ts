@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 
 /// <reference types="node" />
-// `proton <script> [args]` runs `ops/<script>.ts` under Bun, or `ops/<script>.sh`, in the current
+// `arrmatura-support <script> [args]` runs `ops/<script>.ts` under Bun, or `ops/<script>.sh`, in the current
 // directory. A project's npm scripts then name the script instead of its path:
 //
-//   "build:css": "proton build-css --minify"
+//   "codegen:cml-catalog": "arrmatura-support generate-catalog cml"
 //
 // npm puts every `node_modules/.bin` up the tree on PATH, so a workspace package calls it the
 // same way as its root. The script runs as its own process, not an import: some guard their
@@ -43,7 +43,7 @@ if (!command) {
     .filter((file) => /\.(ts|sh)$/.test(file))
     .map((file) => file.replace(/\.(ts|sh)$/, ""))
     .sort();
-  console.error(`Usage: proton <script> [args]\nScripts: ${scripts.join(", ")}`);
+  console.error(`Usage: arrmatura-support <script> [args]\nScripts: ${scripts.join(", ")}`);
   process.exit(1);
 }
 

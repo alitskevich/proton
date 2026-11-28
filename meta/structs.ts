@@ -1,8 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { posix } from "node:path";
 import { readJsonFiles } from "arrmatura-host/files";
-import { capitalize } from "ultimus";
-import { isRecord } from "../bundler/isRecord.ts";
+import { capitalize, isRecord } from "ultimus";
 import { docLines } from "./impl/docLines.ts";
 import { itemsSource } from "./impl/itemsSource.ts";
 import { literalBody } from "./impl/literalBody.ts";

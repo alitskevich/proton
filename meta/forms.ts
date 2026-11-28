@@ -46,7 +46,7 @@ const formLines = (name: string, form: FormSource, all: Map<string, FormSource>)
 /**
  * Generates a forms module: `export const forms = { <name>: [...], … }`, one entry per `<name>.json`
  * in `sourceDir`, each a list of `Forma` field definitions. A form's `description` becomes its doc
- * comment. The module keeps the form typing: it imports `FormField` from `proton/meta`, re-exports
+ * comment. The module keeps the form typing: it imports `FormField` from `arrmatura-support/meta`, re-exports
  * it, and checks every form with `satisfies Record<string, FormField[]>`, so a malformed `.json`
  * fails the typecheck.
  *
@@ -59,7 +59,7 @@ export function generateForms({ sourceDir, outFile, lang }: { sourceDir: string;
   const all = new Map(forms.map(([name, form]) => [name, form as FormSource]));
   const lines = forms.flatMap(([name, form]) => formLines(name, form as FormSource, all));
 
-  const body = `import type { FormField } from "proton/meta";
+  const body = `import type { FormField } from "arrmatura-support/meta";
 
 export type { FormField };
 
