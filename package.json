@@ -12,7 +12,8 @@
   },
   "scripts": {
     "check:deps": "bun bin/index.ts check-deps",
-    "gates": "npx --yes npm-run-all --parallel check:deps typecheck lint test",
+    "check:folders": "bun bin/index.ts check-folder-structure",
+    "gates": "npx --yes npm-run-all --parallel check:deps check:folders typecheck lint test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "release": "./ops/release.sh",
