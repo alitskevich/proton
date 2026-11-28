@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "arrmatura": "github:arrmatura/arrmatura#semver:^7.0.1",
-    "ultimus": "github:arrmatura/ultimus#semver:^2.3.9"
+    "ultimus": "github:arrmatura/ultimus#semver:^2.4.0"
   },
   "peerDependencies": {
     "arrmatura-host": "github:arrmatura/arrmatura-host#semver:^1.0.0"

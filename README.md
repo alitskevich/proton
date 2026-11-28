@@ -13,7 +13,7 @@ Keep each shared utility in one home, so sibling projects stop copying it.
 
 ## Imported code
 
-Code a project imports rather than runs, addressed as `arrmatura-support/<name>`. `arrmatura-support` is private and unpublished, so a project lists the sibling checkout as a `file:` dependency — an app as `"arrmatura-support": "file://../../libs/arrmatura-support"`, a library in `libs/` as `"arrmatura-support": "file://../arrmatura-support"` — never a registry version: it is not on npm. Outside the `~/Projects` checkout, a project depends on a release tag instead: `"arrmatura-support": "github:arrmatura/arrmatura-support#semver:^1.0.0"`. arrmatura-support imports `ultimus`, `arrmatura` and `arrmatura-host` but does not install them, so the project lists them itself.
+Code a project imports rather than runs, addressed as `arrmatura-support/<name>`. `arrmatura-support` is private and unpublished, so a project lists the sibling checkout as a `file:` dependency — an app as `"arrmatura-support": "file://../../libs/arrmatura-support"`, a library in `libs/` as `"arrmatura-support": "file://../arrmatura-support"` — never a registry version: it is not on npm. Outside the `~/Projects` checkout, a project depends on a release tag instead: `"arrmatura-support": "github:arrmatura/arrmatura-support#semver:^2.0.0"`. arrmatura-support imports `ultimus`, `arrmatura` and `arrmatura-host` but does not install them, so the project lists them itself.
 
 | Export | What |
 | --- | --- |
